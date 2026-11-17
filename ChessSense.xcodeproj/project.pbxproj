@@ -97,6 +97,7 @@
 		F8CE6430DB2B2ADC6BF3D62A /* EngineMove.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE9F79F765F7DE0602DBA4C /* EngineMove.swift */; };
 		FB92E7E769868853653E9ADF /* Piece.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B039C6A3289343D6855A082 /* Piece.swift */; };
 		FE83E4598B30E40FAB911B73 /* search.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 85C157B1A2448DA89DED5195 /* search.cpp */; };
+		FF931509FAA878C546FA58A1 /* PieceAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22BDF0136BFAF11DF2555667 /* PieceAssets.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -143,6 +144,7 @@
 		1D81CF5DA2C96A53B220BFDC /* BoardLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardLocator.swift; sourceTree = "<group>"; };
 		1FA227B584364785F5983D62 /* BrandFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandFont.swift; sourceTree = "<group>"; };
 		215D655E9AA76356472AF876 /* LiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityController.swift; sourceTree = "<group>"; };
+		22BDF0136BFAF11DF2555667 /* PieceAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieceAssets.swift; sourceTree = "<group>"; };
 		2413CA625EADA71A715CE502 /* material.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = material.cpp; sourceTree = "<group>"; };
 		292882D2DA0220ECC3DF33BC /* pawns.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pawns.h; sourceTree = "<group>"; };
 		2A615037CAE55264C3F0D9DF /* CSBridge.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = CSBridge.cpp; sourceTree = "<group>"; };
@@ -375,6 +377,7 @@
 				5267AF95E90FDC18A5669002 /* Info.plist */,
 				215D655E9AA76356472AF876 /* LiveActivityController.swift */,
 				0B25E9E80CC1CE22B767CC8D /* LocalStockfishBackend.swift */,
+				22BDF0136BFAF11DF2555667 /* PieceAssets.swift */,
 				5BBFC2BD746F5D8BA9936607 /* SelfTest.swift */,
 			);
 			path = App;
@@ -615,6 +618,7 @@
 				F857C13B4F0F1B8459B84461 /* MoveExplainer.swift in Sources */,
 				11D82D8A2F40B0C9B8802CD8 /* MoveGenerator.swift in Sources */,
 				FB92E7E769868853653E9ADF /* Piece.swift in Sources */,
+				FF931509FAA878C546FA58A1 /* PieceAssets.swift in Sources */,
 				8106FCDDA6F7767A73C28FB5 /* PixelImage.swift in Sources */,
 				7D97A9B666CA93D705C07993 /* PositionTracker.swift in Sources */,
 				7572C305006DDB3C7EE7F444 /* SAN.swift in Sources */,
@@ -703,7 +707,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = 2;
@@ -733,7 +737,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = 2;
@@ -884,7 +888,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = 2;
@@ -935,7 +939,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = 2;

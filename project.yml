@@ -61,13 +61,13 @@ targets:
         INFOPLIST_FILE: App/Info.plist
         CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "19"
+        CURRENT_PROJECT_VERSION: "20"
     info:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: chess-sense
         CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "19"
+        CFBundleVersion: "20"
         UILaunchScreen: {}
         UIAppFonts:
           - InstrumentSerif-Regular.ttf
@@ -119,13 +119,13 @@ targets:
         SKIP_INSTALL: YES
         CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "19"
+        CURRENT_PROJECT_VERSION: "20"
     info:
       path: Widgets/Info.plist
       properties:
         CFBundleDisplayName: Best Move
         CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "19"
+        CFBundleVersion: "20"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
 

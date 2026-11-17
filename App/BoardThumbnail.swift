@@ -13,8 +13,8 @@ struct BoardThumbnail: View {
 
     private struct Cell: Identifiable {
         let id: Int
-        let piece: String
-        let isWhite: Bool
+        /// Asset name of the piece, e.g. "wN"; empty for an empty square.
+        let asset: String
         let light: Bool
     }
 
@@ -35,23 +35,24 @@ struct BoardThumbnail: View {
             let rank = index / 8, file = index % 8
             // a8 is light on this board, verified from the pixels long ago.
             let light = (rank + file) % 2 == 0
-            return Cell(id: index,
-                        piece: Self.glyph(symbol),
-                        isWhite: symbol.isUppercase,
-                        light: light)
+            return Cell(id: index, asset: Self.assetName(symbol), light: light)
         }
     }
 
-    private static func glyph(_ symbol: Character) -> String {
+    /// FEN letter to the bundled piece art. The set is a drawn outline style, which is why
+    /// it needs no colour swap to stay legible on either square colour.
+    private static func assetName(_ symbol: Character) -> String {
+        let kind: String
         switch symbol.lowercased() {
-        case "p": return "\u{265F}"
-        case "n": return "\u{265E}"
-        case "b": return "\u{265D}"
-        case "r": return "\u{265C}"
-        case "q": return "\u{265B}"
-        case "k": return "\u{265A}"
+        case "p": kind = "P"
+        case "n": kind = "N"
+        case "b": kind = "B"
+        case "r": kind = "R"
+        case "q": kind = "Q"
+        case "k": kind = "K"
         default: return ""
         }
+        return (symbol.isUppercase ? "w" : "b") + kind
     }
 
     var body: some View {
@@ -92,11 +93,12 @@ struct BoardThumbnail: View {
             if marked {
                 Rectangle().fill(Color.red.opacity(0.38))
             }
-            if let cell, !cell.piece.isEmpty {
-                Text(cell.piece)
-                    .font(.system(size: square * 0.78))
-                    .foregroundStyle(cell.isWhite ? Color.white : Color(red: 0.11, green: 0.10, blue: 0.14))
-                    .shadow(color: cell.isWhite ? .black.opacity(0.35) : .clear, radius: 1, y: 0.5)
+            if let cell, !cell.asset.isEmpty {
+                Image(cell.asset)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .padding(square * 0.06)
                     .transition(.scale(scale: 0.6).combined(with: .opacity))
             }
         }
