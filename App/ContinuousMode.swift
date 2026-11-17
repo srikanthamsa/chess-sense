@@ -21,6 +21,7 @@ final class ContinuousMode: ObservableObject {
     /// Step-by-step trace of the last attempt, newest last.
     @Published var broadcastLog: [String] = []
     @Published private(set) var taps = 0
+    @Published private(set) var lastAttempt: Date?
     /// What this build actually embeds, shown so a missing extension is obvious.
     var embedded: String { BroadcastInfo.diagnostics }
 
@@ -30,8 +31,15 @@ final class ContinuousMode: ObservableObject {
     var buildLine: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
-        return "build \(version)(\(build)) · taps \(taps) · \(BroadcastInfo.diagnostics)"
+        let last = lastAttempt.map { Self.clock.string(from: $0) } ?? "never"
+        return "build \(version)(\(build)) · taps \(taps) · last \(last)"
     }
+
+    private static let clock: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
 
     private var timer: Timer?
     private var keepAlive: AVAudioPlayer?
@@ -50,6 +58,7 @@ final class ContinuousMode: ObservableObject {
 
     func presentBroadcastSheet() {
         taps += 1
+        lastAttempt = Date()
         broadcastLog = []
         broadcastNote = nil
         BroadcastStarter.onLog = { [weak self] message in

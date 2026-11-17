@@ -284,22 +284,23 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 14) {
-                    // A plain glyph, not RPSystemBroadcastPickerView: a UIKit control inside
-                    // a SwiftUI button label swallows the touch, so the button never fired.
+            // A real Button, not a gesture on an HStack. Two gesture variants produced
+            // "taps 0": nothing ran, and there was no way to tell a lost touch from a dead
+            // callback. A bordered button is unambiguous and its style advertises itself.
+            Button {
+                continuous.presentBroadcastSheet()
+            } label: {
+                HStack(spacing: 14) {
                     Image(systemName: "dot.radiowaves.left.and.right")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(.tint)
-                        .frame(width: 54, height: 54)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                                .strokeBorder(.secondary.opacity(0.25))
-                        )
+                        .frame(width: 44, height: 44)
+                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Start screen broadcast")
                             .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
                         Text("Opens the system broadcast sheet")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -307,7 +308,8 @@ struct ContentView: View {
                     Spacer()
                 }
                 .contentShape(Rectangle())
-                .onTapGesture { continuous.presentBroadcastSheet() }
+            }
+            .buttonStyle(.plain)
 
             Toggle("Watch the screen", isOn: Binding(
                 get: { continuous.active },
@@ -326,6 +328,7 @@ struct ContentView: View {
                 Text(continuous.buildLine)
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
 
                 if let note = continuous.broadcastNote, !note.isEmpty {
                     Text(note)
