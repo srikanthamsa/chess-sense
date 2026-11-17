@@ -87,7 +87,13 @@ public enum BoardLocator {
             rowCounts[y] = c
         }
 
-        let rowThreshold = max(8, Int(Double(w) * 0.25))
+        // Deliberately low. A board's outer ranks are full of pieces, so their rows are
+        // only ~30% board-coloured — a 25% threshold clips them and yields a rect ~30 px
+        // short, which skews every square and made real game screenshots unreadable
+        // ("no template matched a8, closest shape distance 65"). Lavender chrome like an
+        // avatar tile clears 6% too, but it is far shorter than the board, so the longest
+        // contiguous run still selects the board.
+        let rowThreshold = max(8, Int(Double(w) * 0.06))
         guard let band = longestRun(rowCounts, threshold: rowThreshold) else { return nil }
 
         var colCounts = [Int](repeating: 0, count: w)
@@ -103,15 +109,24 @@ public enum BoardLocator {
         }
 
         let bandHeight = band.upperBound - band.lowerBound
-        let colThreshold = max(8, Int(Double(bandHeight) * 0.45))
+        let colThreshold = max(8, Int(Double(bandHeight) * 0.06))
         guard let cols = longestRun(colCounts, threshold: colThreshold) else { return nil }
 
-        let rect = BoardRect(
+        var rect = BoardRect(
             x: cols.lowerBound,
             y: band.lowerBound,
             width: cols.upperBound - cols.lowerBound,
             height: bandHeight
         )
+
+        // A chessboard is square. If the row band came out short (or long) by a fraction,
+        // trust the horizontal extent and re-centre, so squares stay square.
+        if abs(rect.height - rect.width) > max(2, rect.width / 50) {
+            let centre = rect.y + rect.height / 2
+            rect.y = max(0, centre - rect.width / 2)
+            rect.height = rect.width
+        }
+
         return rect.isPlausible ? rect : nil
     }
 

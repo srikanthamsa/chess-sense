@@ -29,18 +29,24 @@ public struct BoardPalette: Sendable {
 
     /// Background for one square.
     ///
-    /// Normally the square's own ring colour, which follows last-move / check tints
-    /// automatically. If that ring colour is far from the palette — i.e. the glyph, not
-    /// the board, owns the ring — fall back to the structural palette colour. Tints move
-    /// a square by a few tens of RGB units; a hijack by a glyph moves it by ~90+.
+    /// Usually the square's own ring colour, so last-move and check highlights are picked
+    /// up for free. The trap is that a big glyph can own the ring, and then the "ring
+    /// colour" is piece fill, not board.
+    ///
+    /// The discriminator is *what kind of colour it is*, not how far it moved from the
+    /// palette. A board square and a highlight are both mid-tone blue-leaning lavender;
+    /// piece fills are not — white sits near luma 0.95 with almost no chroma, and the
+    /// black set sits near luma 0.10. An earlier version compared RGB distance to the
+    /// palette with a 60-unit tolerance and broke on real games: TakeTakeTake's blue
+    /// last-move highlight on a *dark* square moves further than 60 units, so the square
+    /// fell back to the palette colour and the entire highlight was masked as ink
+    /// ("no template matched e7, closest shape distance 59"). The same highlight on a
+    /// light square moved less than 60 and worked, which is why it looked intermittent.
     public func background(rank: Int, file: Int) -> RGB {
-        let expected = boardColour(rank: rank, file: file)
         let ring = ringModes[rank * 8 + file]
-        return rgbDistance(ring, expected) <= Self.tintTolerance ? ring : expected
+        if BoardLocator.isBoardColor(ring.r, ring.g, ring.b) { return ring }
+        return boardColour(rank: rank, file: file)
     }
-
-    /// Max RGB distance from the palette colour still treated as a board tint.
-    public static let tintTolerance = 60.0
 
     public static func estimate(image: PixelImage, rect: BoardRect) -> BoardPalette {
         var modes: [RGB] = []

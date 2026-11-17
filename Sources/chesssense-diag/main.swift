@@ -7,6 +7,8 @@ guard args.count >= 2 else {
     exit(2)
 }
 let url = URL(fileURLWithPath: args[1])
+// Optional: calibrate on a different image, then read args[1] with that book.
+let calibrationURL: URL? = args.count >= 3 ? URL(fileURLWithPath: args[2]) : nil
 guard let image = PixelImage(contentsOf: url) else {
     print("could not decode \(url.path)")
     exit(1)
@@ -67,13 +69,61 @@ for (label, a, b) in [
 }
 
 do {
-    let (book, _, read) = try BoardReader.calibrate(image: image, rect: rect)
+    let (book, _, read): (TemplateBook, BoardRect, BoardRead)
+    if let calibrationURL, let calibrationImage = PixelImage(contentsOf: calibrationURL) {
+        let (calibrated, _, _) = try BoardReader.calibrate(image: calibrationImage)
+        book = calibrated
+        // Manually, so a failure to match still prints the distance table.
+        let targetRect = BoardLocator.locate(image)!
+        print("target board: \(targetRect)")
+        let targetPalette = BoardPalette.estimate(image: image, rect: targetRect)
+        let targetSigs = SquareExtractor.extract(image: image, rect: targetRect, palette: targetPalette)
+        print("\nshape distance to nearest template (tolerance \(calibrated.maxShapeDistance)):")
+        for rank in 0..<8 {
+            var line = ""
+            var worst = 0
+            for file in 0..<8 {
+                let sig = targetSigs[rank * 8 + file]
+                let d = calibrated.entries.map { $0.signature.shapeDistance(to: sig) }.min() ?? 999
+                worst = max(worst, d)
+                line += String(format: "%4d", d)
+            }
+            print("\(8 - rank) " + line + (worst > calibrated.maxShapeDistance ? "  <-- over" : ""))
+        }
+        print("\nink map for the target:")
+        for rank in 0..<8 {
+            var line = ""
+            for file in 0..<8 { line += String(format: "%5.2f", targetSigs[rank * 8 + file].ink) }
+            print("\(8 - rank) " + line)
+        }
+        do { read = try BoardReader.read(image: image, book: calibrated) }
+        catch {
+            print("\nread failed: \(error)")
+            exit(0)
+        }
+    } else {
+        (book, _, read) = try BoardReader.calibrate(image: image, rect: rect)
+    }
     print("\ntemplates: \(book.entries.count)")
     for e in book.entries {
         print(String(format: "  %@  support=%d  shapeTol=%d  colorTol=%.2f",
                      "\(e.piece)".padding(toLength: 3, withPad: " ", startingAt: 0),
                      e.support, book.maxShapeDistance, book.maxColorDistance))
     }
+    // Per-square margin: which squares are close to the tolerance edge?
+    print("\nper-square best shape distance:")
+    for rank in 0..<8 {
+        var line = ""
+        var worst = 0
+        for file in 0..<8 {
+            let sig = read.signatures[rank * 8 + file]
+            let d = book.entries.map { $0.signature.shapeDistance(to: sig) }.min() ?? 999
+            worst = max(worst, d)
+            line += String(format: "%4d", d)
+        }
+        print("\(8 - rank) " + line + (worst > book.maxShapeDistance ? "  <-- over tolerance" : ""))
+    }
+
     print("\nfen:        \(read.fen)")
     print("expected:   \(FEN.encode(TemplateBook.standardStartPlacement))")
     print(String(format: "exactRate=%.3f worstShape=%d minColorMargin=%.3f trustworthy=%@",

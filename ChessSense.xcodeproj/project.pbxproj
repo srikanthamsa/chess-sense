@@ -80,7 +80,7 @@
 /* Begin PBXFileReference section */
 		05DF3FEF2103FB5450D2FFB8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0B039C6A3289343D6855A082 /* Piece.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Piece.swift; sourceTree = "<group>"; };
-		1C2B0E85F208EB2D6622A025 /* ChessSense.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ChessSense.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C2B0E85F208EB2D6622A025 /* ChessSense.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChessSense.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D81CF5DA2C96A53B220BFDC /* BoardLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardLocator.swift; sourceTree = "<group>"; };
 		215D655E9AA76356472AF876 /* LiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityController.swift; sourceTree = "<group>"; };
 		37FC99D8AF824AD84CC9B197 /* EngineBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineBackend.swift; sourceTree = "<group>"; };
@@ -414,6 +414,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Chess Sense";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -579,6 +580,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Chess Sense";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
