@@ -1,5 +1,15 @@
 import Foundation
 
+/// Re-signs an evaluation for the other player. Engine values are White-relative, so a
+/// black player reading "-2.32" would see red for a position they are winning.
+public func flippedEvaluation(_ text: String) -> String {
+    if text.hasPrefix("#") { return "-" + text }
+    if text.hasPrefix("-#") { return String(text.dropFirst()) }
+    if text.hasPrefix("+") { return "-" + text.dropFirst() }
+    if text.hasPrefix("-") { return "+" + text.dropFirst() }
+    return text
+}
+
 /// One engine answer. `san` is filled in by the caller once the move is resolved against
 /// the position, because only then is the notation unambiguous.
 public struct EngineMove: Sendable, Equatable {

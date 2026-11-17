@@ -25,6 +25,9 @@ enum AnalysisPipeline {
         /// Position and move as rules objects, so callers can refine the explanation.
         let position: ChessPosition
         let explainedMove: Move?
+        /// The engine value re-signed for the player whose turn it is, so green always means
+        /// "you are better" no matter which colour you are playing.
+        let playerEval: String
     }
 
     // MARK: - Analyse
@@ -71,7 +74,8 @@ enum AnalysisPipeline {
                     + "colour margin \(String(format: "%.2f", read.minColorMargin)))",
                 why: "",
                 position: position,
-                explainedMove: nil
+                explainedMove: nil,
+                playerEval: ""
             )
         }
 
@@ -144,7 +148,10 @@ enum AnalysisPipeline {
                 failure: nil,
                 why: why,
                 position: position,
-                explainedMove: explained
+                explainedMove: explained,
+                playerEval: position.sideToMove == .black
+                    ? flippedEvaluation(move.evalText)
+                    : move.evalText
             )
         } catch {
             return Outcome(
@@ -157,7 +164,8 @@ enum AnalysisPipeline {
                 failure: "engine: \(error)",
                 why: "",
                 position: position,
-                explainedMove: sync.lastMove
+                explainedMove: sync.lastMove,
+                playerEval: ""
             )
         }
     }
@@ -188,11 +196,14 @@ enum AnalysisPipeline {
         let outcome = try await analyze(imageData: imageData)
 
         guard outcome.trusted, outcome.move != nil else {
-            await LiveActivityController.update(nil, why: outcome.why, trusted: outcome.trusted)
+            await LiveActivityController.update(nil, why: outcome.why,
+                                                trusted: outcome.trusted,
+                                                playerEval: outcome.playerEval)
             return outcome
         }
 
-        await LiveActivityController.update(outcome.move, why: outcome.why, trusted: true)
+        await LiveActivityController.update(outcome.move, why: outcome.why, trusted: true,
+                                            playerEval: outcome.playerEval)
 
         if let key = APIKeyStore.key, !key.isEmpty,
            let move = outcome.move, let resolved = outcome.explainedMove {

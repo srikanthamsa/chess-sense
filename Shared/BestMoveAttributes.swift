@@ -21,6 +21,9 @@ public struct BestMoveAttributes: ActivityAttributes {
         public var trusted: Bool
         /// Plain-English reason, with no chess notation anywhere in it.
         public var why: String
+        /// The engine value re-signed for the player whose turn it is, so green always means
+        /// "you are better" regardless of which colour you are playing.
+        public var playerEval: String
 
         public init(
             uci: String,
@@ -29,7 +32,8 @@ public struct BestMoveAttributes: ActivityAttributes {
             principalVariation: String,
             provenance: String,
             trusted: Bool,
-            why: String = ""
+            why: String = "",
+            playerEval: String = ""
         ) {
             self.uci = uci
             self.san = san
@@ -38,6 +42,12 @@ public struct BestMoveAttributes: ActivityAttributes {
             self.provenance = provenance
             self.trusted = trusted
             self.why = why
+            self.playerEval = playerEval
+        }
+
+        /// Signed value used for colour, arrow and bar. Falls back to the raw engine value.
+        public var youEval: String {
+            playerEval.isEmpty ? evalText : playerEval
         }
 
         public var displayMove: String {
