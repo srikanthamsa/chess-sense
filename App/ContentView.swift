@@ -30,16 +30,9 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
-                    resultCard
-                    calibrationCard
-                    coachingCard
-                    trackingCard
-                    analyseCard
-                    if !detail.isEmpty { detailCard }
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 32)
+                bento
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 28)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("chess-sense")
@@ -56,8 +49,6 @@ struct ContentView: View {
             }
             .onAppear(perform: refresh)
             .task {
-                // Commit 3555511 dropped this hook, which left `SelfTest` unreachable and
-                // made every "-chesssense-selftest" run a no-op. Harmless in normal use.
                 guard SelfTest.requested else { return }
                 busy = true
                 let report = await SelfTest.run()
@@ -77,25 +68,51 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Result
+    // MARK: - Bento
 
-    private var resultCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    /// A three-band bento: one statement, a pair of actions, a pair of settings, then the
+    /// wide detail strip. Tiles in a band share a height, which is what makes the grid read as
+    /// a composition rather than a list of cards.
+    private var bento: some View {
+        VStack(spacing: 12) {
+            resultTile
+
+            HStack(alignment: .top, spacing: 12) {
+                analyseTile.frame(maxWidth: .infinity)
+                islandTile.frame(maxWidth: .infinity)
+            }
+            .frame(height: 138)
+
+            HStack(alignment: .top, spacing: 12) {
+                calibrationTile.frame(maxWidth: .infinity)
+                coachingTile.frame(maxWidth: .infinity)
+            }
+            .frame(height: 152)
+
+            positionTile
+
+            if !detail.isEmpty { detailTile }
+        }
+        .padding(.top, 4)
+    }
+
+    // MARK: - Tiles
+
+    /// The statement. One number, one sentence, nothing competing with it.
+    private var resultTile: some View {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(headline)
-                    // @ScaledMetric keeps the intentional weight and rounded face while
-                    // letting the headline grow with the user's type size. A fixed 40 pt
-                    // stopped scaling, so sublines overtook it at accessibility sizes.
-                    .font(.brandHero(headlineSize * 1.12))
+                    .font(.brandHero(headlineSize * 1.18))
                     .tracking(-0.5)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.6)
                     .lineLimit(2)
                     .monospacedDigit()
                     .contentTransition(.numericText())
                     .animation(.snappy, value: headline)
                 if let lastEval {
                     Text(lastEval)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .padding(.horizontal, 9)
                         .padding(.vertical, 3)
@@ -104,20 +121,23 @@ struct ContentView: View {
                 }
                 Spacer(minLength: 0)
             }
+
             Text(subline)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .lineLimit(2)
+
             if let lastWhy, !lastWhy.isEmpty {
-                Divider()
                 Text(lastWhy)
-                    .font(.callout)
-                    .foregroundStyle(.primary.opacity(0.85))
+                    .font(.footnote)
+                    .foregroundStyle(.primary.opacity(0.72))
+                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
+        .padding(16)
+        .background(tileFill, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
     }
 
     private var evalTint: Color {
@@ -130,55 +150,108 @@ struct ContentView: View {
         return .secondary
     }
 
-    // MARK: - Cards
-
-    private var calibrationCard: some View {
-        panel("Calibration", systemImage: "square.grid.3x3.fill") {
-            Text("Screenshot a fresh game in TakeTakeTake and pick it here. One frame teaches all 13 templates, and the read is verified before it is accepted.")
-                .font(.footnote)
+    private var analyseTile: some View {
+        tile("Analyse", systemImage: "sparkle.magnifyingglass", tint: .blue) {
+            Text("Screenshot the board, pick it here, get the move.")
+                .font(.caption2)
                 .foregroundStyle(.secondary)
-            PhotosPicker(selection: $calibrationItem, matching: .images) {
-                Label("Pick starting-position screenshot", systemImage: "photo.badge.plus")
+                .lineLimit(2)
+            Spacer(minLength: 0)
+            PhotosPicker(selection: $analysisItem, matching: .images) {
+                Label("Screenshot", systemImage: "photo")
+                    .font(.footnote.weight(.semibold))
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-
-            HStack {
-                if let calibrationDate {
-                    Label(calibrationDate.formatted(date: .abbreviated, time: .shortened),
-                          systemImage: "checkmark.seal.fill")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                } else {
-                    Label("not calibrated", systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                }
-                Spacer()
-                Button("Reset", role: .destructive) {
-                    store.reset()
-                    refresh()
-                    headline = "Reset"
-                    subline = "Calibration and move history cleared."
-                    lastMove = nil; lastEval = nil; lastWhy = nil
-                }
-                .font(.caption)
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Rectangle())
-            }
+            .controlSize(.regular)
         }
     }
 
-    private var coachingCard: some View {
-        panel("Coaching line", systemImage: "text.bubble.fill") {
-            Text("Add a DeepSeek API key for a spoken-style explanation in everyday words. Without a key you still get a plain-English line written on device.")
-                .font(.footnote)
+    private var islandTile: some View {
+        tile("Island", systemImage: "capsule.portrait.fill", tint: .pink) {
+            Text(tracking ? "Live Activity running." : "Shows the move above the game.")
+                .font(.caption2)
                 .foregroundStyle(.secondary)
-            HStack(spacing: 8) {
+                .lineLimit(2)
+            Spacer(minLength: 0)
+            Button {
+                do {
+                    if LiveActivityController.isRunning {
+                        Task { await LiveActivityController.end() }
+                    } else {
+                        _ = try LiveActivityController.start()
+                    }
+                    tracking = LiveActivityController.isRunning
+                } catch {
+                    headline = "Island failed"
+                    subline = "Live Activities are unavailable for this app."
+                    detail = "\(error)"
+                }
+            } label: {
+                Label(tracking ? "Stop" : "Start",
+                      systemImage: tracking ? "stop.circle.fill" : "play.circle.fill")
+                    .font(.footnote.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.regular)
+            .tint(tracking ? .red : .accentColor)
+        }
+    }
+
+    private var calibrationTile: some View {
+        tile("Calibration", systemImage: "square.grid.3x3.fill", tint: .orange) {
+            Text("Learn this board once, from the start.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+            PhotosPicker(selection: $calibrationItem, matching: .images) {
+                Label("Pick start", systemImage: "photo.badge.plus")
+                    .font(.footnote.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.regular)
+
+            Spacer(minLength: 0)
+
+            if let calibrationDate {
+                Label(calibrationDate.formatted(date: .abbreviated, time: .omitted),
+                      systemImage: "checkmark.seal.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.green)
+                    .lineLimit(1)
+            } else {
+                Label("not calibrated", systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+                    .lineLimit(1)
+            }
+
+            Button("Reset") {
+                store.reset()
+                refresh()
+                headline = "Reset"
+                subline = "Calibration and move history cleared."
+                lastMove = nil; lastEval = nil; lastWhy = nil
+            }
+            .font(.caption2)
+            .foregroundStyle(.red)
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var coachingTile: some View {
+        tile("Coach", systemImage: "text.bubble.fill", tint: .green) {
+            Text("Optional: warmer wording.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            HStack(spacing: 6) {
                 SecureField("sk-…", text: $keyDraft)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .font(.caption)
                     .textFieldStyle(.roundedBorder)
                 Button("Save") {
                     keySaved = APIKeyStore.save(keyDraft)
@@ -188,15 +261,19 @@ struct ContentView: View {
                         ? "DeepSeek will refine each explanation."
                         : "Could not write to the keychain."
                 }
+                .font(.caption.weight(.semibold))
                 .buttonStyle(.bordered)
                 .disabled(keyDraft.trimmingCharacters(in: .whitespaces).isEmpty)
             }
-            HStack {
-                Label(APIKeyStore.isConfigured ? "DeepSeek connected" : "on-device explanations",
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 4) {
+                Label(APIKeyStore.isConfigured ? "connected" : "on device",
                       systemImage: APIKeyStore.isConfigured ? "bolt.horizontal.circle.fill" : "cpu")
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundStyle(APIKeyStore.isConfigured ? .green : .secondary)
-                Spacer()
+                Spacer(minLength: 0)
                 if APIKeyStore.isConfigured {
                     Button("Remove") {
                         APIKeyStore.clear()
@@ -204,104 +281,95 @@ struct ContentView: View {
                         headline = "Key removed"
                         subline = "Falling back to on-device explanations."
                     }
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundStyle(.red)
-                    .frame(minWidth: 44, minHeight: 44)
-                    .contentShape(Rectangle())
+                    .buttonStyle(.plain)
                 }
             }
         }
     }
 
-    private var trackingCard: some View {
-        panel("Dynamic Island", systemImage: "capsule.portrait.fill") {
-            Button {
-                tracking.toggle()
-                if tracking {
-                    do {
-                        try LiveActivityController.start()
-                    } catch {
-                        // Live Activity can be refused by the system (disabled in Settings,
-                        // or too many running). Say that, rather than dumping the NSError.
-                        tracking = false
-                        headline = "Can't start"
-                        subline = "Live Activities are turned off for this app. Check Settings, then try again."
-                    }
-                } else {
-                    Task { await LiveActivityController.end() }
-                }
-            } label: {
-                Label(tracking ? "Stop Live Activity" : "Start Live Activity",
-                      systemImage: tracking ? "stop.circle.fill" : "play.circle.fill")
-                    .frame(maxWidth: .infinity)
+    /// Wide strip: the position being tracked, and the way into the design studio.
+    private var positionTile: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 7) {
+                Image(systemName: "number")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.teal)
+                    .frame(width: 22, height: 22)
+                    .background(Color.teal.opacity(0.14),
+                                in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                Text("Position")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.primary.opacity(0.85))
+                Spacer()
+                NavigationLink("Studio") { DesignStudioView() }
+                    .font(.caption2)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .tint(tracking ? .red : .accentColor)
-
-            Text("Wire it hands-free: Shortcuts → **Take Screenshot** → **Best Move**, bound to Back Tap or the Action Button.")
-                .font(.footnote)
+            Text(trackedFEN ?? "No position tracked yet. Calibrate, then analyse a move.")
+                .font(.system(size: 10.5, design: .monospaced))
                 .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(12)
+        .background(tileFill, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
 
-            if let trackedFEN {
-                Text(trackedFEN)
-                    .font(.system(.caption2, design: .monospaced))
+    private var detailTile: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .textSelection(.enabled)
-                Button("Forget move history", role: .destructive) {
-                    store.resetTracking()
-                    refresh()
-                    headline = "History cleared"
-                    subline = "Next screenshot is treated as a fresh position."
-                }
-                .font(.caption)
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Rectangle())
+                Text("Details")
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(0.4)
+                    .foregroundStyle(.secondary)
+                Spacer()
             }
-        }
-    }
-
-    private var analyseCard: some View {
-        panel("Analyse a position", systemImage: "sparkle.magnifyingglass") {
-            PhotosPicker(selection: $analysisItem, matching: .images) {
-                Label("Pick current-position screenshot", systemImage: "photo")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-        }
-    }
-
-    private var detailCard: some View {
-        panel("Details", systemImage: "doc.text.magnifyingglass") {
             Text(detail)
-                .font(.system(size: 11, design: .monospaced))
+                .font(.system(size: 10.5, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(14)
+        .background(tileFill, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
-    // MARK: - Panel chrome
+    // MARK: - Tile chrome
 
-    private func panel<Content: View>(
+    private var tileFill: some ShapeStyle {
+        .regularMaterial
+    }
+
+    /// One bento tile: a tinted glyph, a small title, then content that fills the band.
+    private func tile<Content: View>(
         _ title: String,
         systemImage: String,
+        tint: Color,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label(title, systemImage: systemImage)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary.opacity(0.9))
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 7) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(tint)
+                    .frame(width: 22, height: 22)
+                    .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.primary.opacity(0.85))
+                Spacer(minLength: 0)
+            }
             content()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(12)
+        .background(tileFill, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
-
-    // MARK: - Actions
 
     private func refresh() {
         calibrationDate = store.calibrationDate
