@@ -9,31 +9,33 @@ struct BestMoveLiveActivity: Widget {
                 .activityBackgroundTint(Color.black)
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let accent = IslandAccent.resolve(context.state)
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    IslandExpandedLeading(trusted: context.state.trusted, thinking: false)
+                    IslandExpandedLeading(state: context.state)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     IslandExpandedMove(state: context.state)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    EvalPill(evalText: context.state.evalText, trusted: context.state.trusted)
+                    EvalPill(evalText: context.state.youEval,
+                             trusted: context.state.trusted)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     IslandExpandedBottom(state: context.state)
                 }
             } compactLeading: {
-                IslandCompactLeading(trusted: context.state.trusted)
+                IslandCompactLeading(trusted: context.state.trusted, accent: accent)
             } compactTrailing: {
                 IslandCompactTrailing(move: context.state.displayMove,
-                                      trusted: context.state.trusted)
+                                      trusted: context.state.trusted,
+                                      accent: accent)
             } minimal: {
                 IslandMinimal(move: context.state.displayMove,
-                          presentation: IslandPresentation(context.state))
+                              presentation: IslandPresentation(context.state))
+                    .foregroundStyle(accent)
             }
-            .keylineTint(context.state.trusted
-                         ? advantageTint(context.state.evalText)
-                         : .orange)
+            .keylineTint(accent)
         }
     }
 }

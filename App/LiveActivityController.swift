@@ -48,7 +48,10 @@ enum LiveActivityController {
     ///
     /// If nothing is running yet it starts one first, so a Shortcut invoked on a cold app
     /// still produces an Island instead of silently doing nothing.
-    static func update(_ move: EngineMove?, why: String, trusted: Bool, playerEval: String = "") async {
+    static func update(
+        _ move: EngineMove?, why: String, trusted: Bool,
+        playerEval: String = "", pieceSymbol: String = ""
+    ) async {
         if Activity<BestMoveAttributes>.activities.isEmpty {
             _ = try? start()
         }

@@ -28,18 +28,18 @@ struct DesignStudioView: View {
             case .waiting:
                 return .init(uci: "----", san: "", evalText: "---",
                              principalVariation: "", provenance: "waiting for a screenshot",
-                             trusted: true, why: "", playerEval: "0.00")
+                             trusted: true, why: "", playerEval: "0.00", pieceSymbol: "")
             case .thinking:
                 return .init(uci: "----", san: "", evalText: "+0.20",
                              principalVariation: "", provenance: "reading the board",
-                             trusted: true, why: "", playerEval: "+0.20")
+                             trusted: true, why: "", playerEval: "+0.20", pieceSymbol: "")
             case .coaching:
                 return .init(uci: "b6d4", san: "Qxd4", evalText: "-2.32",
                              principalVariation: "Qxd4 Nxc6 Qd1+ Rxd1 bxc6",
                              provenance: "lichess cloud · d31",
                              trusted: true,
                              why: "Your queen slides onto the open diagonal and takes that pawn, so you are simply a piece up here.",
-                             playerEval: "+2.32")
+                             playerEval: "+2.32", pieceSymbol: "\u{265B}")
             case .unclear:
                 return .init(uci: "--", san: "", evalText: "!",
                              principalVariation: "board read was not confident",
@@ -49,7 +49,7 @@ struct DesignStudioView: View {
                              principalVariation: "Ra8#",
                              provenance: "stockfish.online · d14", trusted: true,
                              why: "Your rook drops onto the back row. His king has nowhere to go — that is checkmate.",
-                             playerEval: "#1")
+                             playerEval: "#1", pieceSymbol: "\u{2656}")
             }
         }
     }
@@ -104,9 +104,11 @@ struct DesignStudioView: View {
     private var compact: some View {
         HStack(spacing: 26) {
             HStack(spacing: 8) {
-                IslandCompactLeading(trusted: sample.state.trusted)
+                IslandCompactLeading(trusted: sample.state.trusted,
+                                     accent: IslandAccent.resolve(sample.state))
                 IslandCompactTrailing(move: sample.state.displayMove,
-                                      trusted: sample.state.trusted)
+                                      trusted: sample.state.trusted,
+                                      accent: IslandAccent.resolve(sample.state))
             }
             .padding(.horizontal, 14)
             .frame(height: 37)
@@ -149,10 +151,7 @@ struct DesignStudioView: View {
     private var expanded: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 12) {
-                IslandExpandedLeading(
-                    trusted: sample.state.trusted,
-                    thinking: sample == .thinking
-                )
+                IslandExpandedLeading(state: sample.state, thinking: sample == .thinking)
                 IslandExpandedMove(state: sample.state)
                 Spacer(minLength: 4)
                 EvalPill(evalText: sample.state.youEval, trusted: sample.state.trusted)

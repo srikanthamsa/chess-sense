@@ -64,6 +64,19 @@ public enum MoveExplainer {
         return target.isEmpty ? nil : target
     }
 
+    /// Unicode chess glyph for a piece, as the Island shows it.
+    public static func symbol(for kind: PieceKind, color: PieceColor) -> String {
+        let white: [PieceKind: String] = [
+            .king: "\u{2654}", .queen: "\u{2655}", .rook: "\u{2656}",
+            .bishop: "\u{2657}", .knight: "\u{2658}", .pawn: "\u{2659}",
+        ]
+        let black: [PieceKind: String] = [
+            .king: "\u{265A}", .queen: "\u{265B}", .rook: "\u{265C}",
+            .bishop: "\u{265D}", .knight: "\u{265E}", .pawn: "\u{265F}",
+        ]
+        return color == .white ? (white[kind] ?? "") : (black[kind] ?? "")
+    }
+
     static func pieceName(_ kind: PieceKind) -> String {
         switch kind {
         case .pawn: return "pawn"

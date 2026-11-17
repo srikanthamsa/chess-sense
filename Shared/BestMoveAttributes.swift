@@ -24,6 +24,8 @@ public struct BestMoveAttributes: ActivityAttributes {
         /// The engine value re-signed for the player whose turn it is, so green always means
         /// "you are better" regardless of which colour you are playing.
         public var playerEval: String
+        /// Unicode glyph of the piece that moves, e.g. "♘". Empty when unknown.
+        public var pieceSymbol: String
 
         public init(
             uci: String,
@@ -33,7 +35,8 @@ public struct BestMoveAttributes: ActivityAttributes {
             provenance: String,
             trusted: Bool,
             why: String = "",
-            playerEval: String = ""
+            playerEval: String = "",
+            pieceSymbol: String = ""
         ) {
             self.uci = uci
             self.san = san
@@ -43,6 +46,7 @@ public struct BestMoveAttributes: ActivityAttributes {
             self.trusted = trusted
             self.why = why
             self.playerEval = playerEval
+            self.pieceSymbol = pieceSymbol
         }
 
         /// Signed value used for colour, arrow and bar. Falls back to the raw engine value.

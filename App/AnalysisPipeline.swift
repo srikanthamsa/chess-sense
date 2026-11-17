@@ -28,6 +28,8 @@ enum AnalysisPipeline {
         /// The engine value re-signed for the player whose turn it is, so green always means
         /// "you are better" no matter which colour you are playing.
         let playerEval: String
+        /// Unicode glyph of the piece that moves, for the Island badge.
+        let pieceSymbol: String
     }
 
     // MARK: - Analyse
@@ -75,7 +77,8 @@ enum AnalysisPipeline {
                 why: "",
                 position: position,
                 explainedMove: nil,
-                playerEval: ""
+                playerEval: "",
+                pieceSymbol: ""
             )
         }
 
@@ -151,7 +154,13 @@ enum AnalysisPipeline {
                 explainedMove: explained,
                 playerEval: position.sideToMove == .black
                     ? flippedEvaluation(move.evalText)
-                    : move.evalText
+                    : move.evalText,
+                pieceSymbol: explained.map { piece -> String in
+                    if case let .piece(kind, color) = position.board[piece.from] {
+                        return MoveExplainer.symbol(for: kind, color: color)
+                    }
+                    return ""
+                } ?? ""
             )
         } catch {
             return Outcome(
@@ -165,7 +174,8 @@ enum AnalysisPipeline {
                 why: "",
                 position: position,
                 explainedMove: sync.lastMove,
-                playerEval: ""
+                playerEval: "",
+                pieceSymbol: ""
             )
         }
     }
@@ -203,7 +213,8 @@ enum AnalysisPipeline {
         }
 
         await LiveActivityController.update(outcome.move, why: outcome.why, trusted: true,
-                                            playerEval: outcome.playerEval)
+                                            playerEval: outcome.playerEval,
+                                            pieceSymbol: outcome.pieceSymbol)
 
         if let key = APIKeyStore.key, !key.isEmpty,
            let move = outcome.move, let resolved = outcome.explainedMove {
