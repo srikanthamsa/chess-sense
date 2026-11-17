@@ -74,8 +74,12 @@ enum AnalysisPipeline {
                 trusted: false,
                 trackingNote: "",
                 move: nil,
-                failure: "low-confidence read (worst shape \(read.worstShapeDistance), "
-                    + "colour margin \(String(format: "%.2f", read.minColorMargin)))",
+                failure: read.scaleMismatch
+                    ? "This frame is \(Int(read.squareSize)) px per square but the templates "
+                        + "were learned at \(Int(read.bookSquareSize ?? 0)) px. Recalibrate "
+                        + "from the broadcast."
+                    : "low-confidence read (worst shape \(read.worstShapeDistance), "
+                        + "colour margin \(String(format: "%.2f", read.minColorMargin)))",
                 why: "",
                 position: position,
                 explainedMove: nil,

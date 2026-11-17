@@ -255,3 +255,52 @@ final class StaleRectTests: XCTestCase {
         }
     }
 }
+
+/// Broadcast frames arrive at a different scale than screenshots, and a book trained on one
+/// misreads the other *confidently*: queens match pawns at a small distance and the position
+/// still looks legal. Scale is therefore a reason to distrust a read, not a cosmetic detail.
+final class ScaleMismatchTests: XCTestCase {
+
+    private func image(_ name: String) throws -> PixelImage {
+        let url = try XCTUnwrap(
+            Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Fixtures")
+        )
+        return try XCTUnwrap(PixelImage(contentsOf: url))
+    }
+
+    /// Half-scale capture: rectangles, glyphs and video artefacts all differ, exactly like a
+    /// ReplayKit frame.
+    private func scaled(_ image: PixelImage, by factor: Double) -> PixelImage {
+        let width = Int(Double(image.width) * factor)
+        let height = Int(Double(image.height) * factor)
+        var rgba = [UInt8](repeating: 0, count: width * height * 4)
+        for y in 0..<height {
+            let sy = min(image.height - 1, Int(Double(y) / factor))
+            for x in 0..<width {
+                let sx = min(image.width - 1, Int(Double(x) / factor))
+                let source = image.offset(sx, sy)
+                let target = (y * width + x) * 4
+                for channel in 0..<4 { rgba[target + channel] = image.rgba[source + channel] }
+            }
+        }
+        return PixelImage(width: width, height: height, rgba: rgba)
+    }
+
+    func testBookRecordsTheScaleItLearned() throws {
+        let (book, _, _) = try BoardReader.calibrate(image: try image("taketaketake-start"))
+        let learned = try XCTUnwrap(book.squareSize)
+        XCTAssertEqual(learned, 1206.0 / 8, accuracy: 0.5)
+    }
+
+    func testAScreenshotBookRefusesAScaledFrame() throws {
+        let full = try image("taketaketake-start")
+        let (book, _, _) = try BoardReader.calibrate(image: full)
+
+        // Reading the same board at 70% scale: if the scale guard is present the read is
+        // untrusted, which is the whole point -- silently wrong is worse than refused.
+        let scaledImage = scaled(full, by: 0.70)
+        if let read = try? BoardReader.read(image: scaledImage, book: book) {
+            XCTAssertFalse(read.isTrustworthy, "a 151 px book must not bless a 105 px frame")
+        }
+    }
+}

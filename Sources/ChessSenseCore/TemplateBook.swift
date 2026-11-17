@@ -30,17 +30,24 @@ public struct TemplateBook: Sendable, Codable {
     public let maxShapeDistance: Int
     /// Max |Δ ink luma| between the square and its template.
     public let maxColorDistance: Double
+    /// Pixels per square when the templates were learned. Broadcast frames arrive at a
+    /// different scale than screenshots (884 wide instead of 1206), which changes glyph stroke
+    /// weight enough that a screenshot-trained book misreads broadcast squares *confidently*
+    /// rather than failing loudly. Recording the scale lets a read say why it is unreliable.
+    public var squareSize: Double?
     public let createdAt: Date
 
     public init(
         entries: [Entry],
         maxShapeDistance: Int,
         maxColorDistance: Double,
+        squareSize: Double? = nil,
         createdAt: Date = Date()
     ) {
         self.entries = entries
         self.maxShapeDistance = maxShapeDistance
         self.maxColorDistance = maxColorDistance
+        self.squareSize = squareSize
         self.createdAt = createdAt
     }
 
@@ -116,7 +123,8 @@ public extension TemplateBook {
         signatures: [SquareSignature],
         placement: [Piece],
         shapeTolerance: Int = 12,
-        colorTolerance: Double = 0.10
+        colorTolerance: Double = 0.10,
+        squareSize: Double? = nil
     ) throws -> TemplateBook {
         precondition(signatures.count == 64 && placement.count == 64)
 
@@ -164,7 +172,8 @@ public extension TemplateBook {
         return TemplateBook(
             entries: entries,
             maxShapeDistance: shapeTolerance,
-            maxColorDistance: colorTolerance
+            maxColorDistance: colorTolerance,
+            squareSize: squareSize
         )
     }
 }

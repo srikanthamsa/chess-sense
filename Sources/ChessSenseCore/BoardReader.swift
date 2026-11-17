@@ -15,6 +15,16 @@ public struct BoardRead: Sendable {
     public let signatures: [SquareSignature]
     /// Which side was at the bottom of the screen when this was read.
     public let orientation: BoardOrientation
+    /// True when the templates were learned at a different board scale than this frame.
+    ///
+    /// A screenshot-trained book (151 px squares) landing on broadcast frames (110 px) does not
+    /// fail loudly: stroke weight changes enough that it matches the wrong glyph with a small
+    /// distance, so queens read as pawns and the position looks legal. Scale is therefore a
+    /// first-class reason to distrust a read.
+    public let scaleMismatch: Bool
+    /// Pixels per square this frame was read at, and the scale the book was learned at.
+    public let squareSize: Double
+    public let bookSquareSize: Double?
     /// Side to move as reported by the last-move tint, when the frame says. Direct evidence,
     /// unlike the tracked history — see `HighlightDetector`.
     public let sideToMove: PieceColor?
@@ -23,7 +33,7 @@ public struct BoardRead: Sendable {
     /// Every square already matched inside the book's tolerances to get here, so the
     /// meaningful extra signal is how decisively colour separated the candidates.
     public var isTrustworthy: Bool {
-        worstShapeDistance <= 8 && minColorMargin >= 0.08
+        !scaleMismatch && worstShapeDistance <= 8 && minColorMargin >= 0.08
     }
 }
 
@@ -87,8 +97,19 @@ public enum BoardReader {
             minColorMargin: minMargin.isFinite ? minMargin : 1.0,
             signatures: sigs,
             orientation: orientation,
+            scaleMismatch: scaleMismatch(book: book, board: board),
+            squareSize: Double(board.width) / 8,
+            bookSquareSize: book.squareSize,
             sideToMove: sideToMove
         )
+    }
+
+    /// More than ~6% difference in pixels-per-square changes stroke weight enough to matter:
+    /// 151 px screenshot squares against 110 px broadcast squares misread confidently.
+    static func scaleMismatch(book: TemplateBook, board: BoardRect) -> Bool {
+        guard let learned = book.squareSize, learned > 0 else { return false }
+        let now = Double(board.width) / 8
+        return abs(now - learned) / learned > 0.06
     }
 
     /// One-shot calibration: learns templates from a frame known to show `placement`
@@ -130,7 +151,10 @@ public enum BoardReader {
         // If the calibration frame is shown from Black's side, the signatures are rotated
         // relative to the standard placement array; rotate the expectation to match.
         let aligned = orientation.isFlipped ? rotated180(placement) : placement
-        let book = try TemplateBook.bootstrap(signatures: sigs, placement: aligned)
+        let book = try TemplateBook.bootstrap(
+            signatures: sigs, placement: aligned,
+            squareSize: Double(board.width) / 8
+        )
         let verification = try read(image: image, book: book, rect: board)
 
         let expected = FEN.encode(aligned)
