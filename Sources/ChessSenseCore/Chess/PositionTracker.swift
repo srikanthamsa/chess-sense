@@ -41,6 +41,15 @@ public struct PositionTracker: Sendable {
         public var lastSAN: String? { sans.last }
     }
 
+    /// Overrides the side to move with direct evidence from the frame.
+    ///
+    /// History drifts: one poisoned observation leaves the tracker half a move out forever,
+    /// and the position then gets evaluated for the wrong player. The last-move tint says who
+    /// moves next, so it is trusted over accumulated history.
+    public mutating func forceSideToMove(_ color: PieceColor) {
+        position.sideToMove = color
+    }
+
     /// Feeds one observed placement (64 squares, FEN order) and advances as far as needed.
     public mutating func observe(_ placement: [Piece]) -> Sync {
         if placement == position.board {

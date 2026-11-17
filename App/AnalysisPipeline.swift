@@ -78,11 +78,28 @@ enum AnalysisPipeline {
         // History supplies what a single frame cannot.
         var tracker = store.trackedFEN.flatMap(PositionTracker.init(fen:)) ?? PositionTracker()
         let before = tracker.position
-        let sync = tracker.observe(read.pieces)
+        var sync = tracker.observe(read.pieces)
+
+        // The frame's own tint beats accumulated history. Without this, one bad frame leaves
+        // the side to move wrong for the rest of the game and the app recommends the
+        // opponent's best move -- which is exactly what was reported.
+        var turnCorrected = false
+        if let direct = read.sideToMove, tracker.position.sideToMove != direct {
+            tracker.forceSideToMove(direct)
+            turnCorrected = true
+            sync = PositionTracker.Sync(
+                moves: sync.moves,
+                sans: sync.sans,
+                fen: tracker.position.fen,
+                didResync: true
+            )
+        }
         store.trackedFEN = tracker.position.fen
 
-        let note: String
-        if sync.didResync {
+        var note: String
+        if turnCorrected {
+            note = "turn corrected from the board"
+        } else if sync.didResync {
             note = "board did not match legal play — resynced"
         } else if let last = sync.lastSAN {
             note = sync.moves.count > 1

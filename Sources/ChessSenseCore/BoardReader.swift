@@ -15,6 +15,9 @@ public struct BoardRead: Sendable {
     public let signatures: [SquareSignature]
     /// Which side was at the bottom of the screen when this was read.
     public let orientation: BoardOrientation
+    /// Side to move as reported by the last-move tint, when the frame says. Direct evidence,
+    /// unlike the tracked history — see `HighlightDetector`.
+    public let sideToMove: PieceColor?
 
     /// Gate for "would I bet a move on this read?".
     /// Every square already matched inside the book's tolerances to get here, so the
@@ -58,9 +61,17 @@ public enum BoardReader {
             pieces.append(match.piece)
         }
 
+        let rawPieces = pieces
+
         // A flipped board is the same position rotated 180°: rotate the squares so every
         // consumer downstream (tracker, engine, SAN) sees White at the bottom.
         if orientation.isFlipped { pieces = rotated180(pieces) }
+
+        // Direct evidence of whose turn it is, computed in raw reading order so it does not
+        // need the orientation treatment the board does.
+        let sideToMove = HighlightDetector.sideToMove(
+            image: image, rect: board, palette: palette, pieces: rawPieces
+        )
 
         return BoardRead(
             fen: FEN.encode(pieces),
@@ -70,7 +81,8 @@ public enum BoardReader {
             worstShapeDistance: worst,
             minColorMargin: minMargin.isFinite ? minMargin : 1.0,
             signatures: sigs,
-            orientation: orientation
+            orientation: orientation,
+            sideToMove: sideToMove
         )
     }
 
