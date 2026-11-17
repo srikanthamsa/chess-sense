@@ -67,6 +67,60 @@ public func advantageTint(_ text: String) -> Color {
     return Island.neutral
 }
 
+// MARK: - Glass
+
+/// The iOS 26 "liquid glass" treatment used by the expanded Siri card: a dark-to-clear tint
+/// that melts into the hardware pill, real refraction underneath, and a specular rim that
+/// only catches light along the bottom edge.
+///
+/// A Live Activity cannot repaint the Island itself — the system owns that surface — so this
+/// is used where the app owns its own background: the lock-screen card and the in-app studio.
+public extension View {
+    @ViewBuilder
+    func glassCard(cornerRadius: CGFloat = 34) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        if #available(iOS 26.0, *) {
+            self
+                .background(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .black.opacity(0.90), location: 0.0),
+                            .init(color: .black.opacity(0.58), location: 0.45),
+                            .init(color: .black.opacity(0.10), location: 0.85),
+                            .init(color: .clear, location: 1.0),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .glassEffect(.clear.interactive(), in: shape)
+                .overlay(
+                    shape.strokeBorder(
+                        LinearGradient(
+                            colors: [.clear, .white.opacity(0.35)],
+                            startPoint: .center,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.75
+                    )
+                )
+        } else {
+            self
+                .background(shape.fill(.black.opacity(0.62)))
+                .overlay(
+                    shape.strokeBorder(
+                        LinearGradient(
+                            colors: [.clear, .white.opacity(0.22)],
+                            startPoint: .center,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 0.75
+                    )
+                )
+        }
+    }
+}
+
 // MARK: - Small parts
 
 /// A four-dot checker mark: the app's own glyph, legible at 11 pt.
@@ -417,9 +471,9 @@ public struct IslandExpandedBottom: View {
                 .padding(.top, 3)
 
             Text(tipText)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineSpacing(1)
+                .font(.system(size: 15.5, weight: .medium))
+                .foregroundStyle(.white.opacity(0.92))
+                .lineSpacing(2.5)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
                 .contentTransition(.opacity)
@@ -495,8 +549,9 @@ public struct LockScreenCard: View {
                 .foregroundStyle(.white.opacity(0.3))
                 .lineLimit(1)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 18)
+        .glassCard(cornerRadius: 34)
     }
 
     private var header: some View {
