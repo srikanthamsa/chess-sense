@@ -44,8 +44,28 @@ public struct BoardPalette: Sendable {
     /// light square moved less than 60 and worked, which is why it looked intermittent.
     public func background(rank: Int, file: Int) -> RGB {
         let ring = ringModes[rank * 8 + file]
-        if BoardLocator.isBoardColor(ring.r, ring.g, ring.b) { return ring }
-        return boardColour(rank: rank, file: file)
+        return Self.isPieceFill(ring) ? boardColour(rank: rank, file: file) : ring
+    }
+
+    /// True for colours that can only be piece artwork, never a board square.
+    ///
+    /// The question "is this board or glyph?" is answered by asking the opposite: could a
+    /// piece be painted this colour? In this piece set white is bright and essentially
+    /// achromatic, black is near-black. Anything else — lavender board, blue last-move
+    /// highlight, a red check tint, a green move-quality tint — is a square background,
+    /// whatever its tint, and using it as the background keeps the glyph mask correct.
+    ///
+    /// An earlier version only accepted colours that passed `isBoardColor`, which is
+    /// narrower than reality: any overlay that isn't blue-leaning fell back to the palette
+    /// colour and the whole square was masked as ink, surfacing as
+    /// "closest shape distance 59" — the signature of a full square of ink, since a fully
+    /// set mask sits about 59 bits from the densest piece template.
+    public static func isPieceFill(_ c: RGB) -> Bool {
+        let l = c.luminance
+        let chroma = max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b))
+        if l > 0.88, chroma < 30 { return true }   // white pieces
+        if l < 0.25 { return true }                // black pieces
+        return false
     }
 
     public static func estimate(image: PixelImage, rect: BoardRect) -> BoardPalette {

@@ -67,6 +67,37 @@ public struct PixelImage: Sendable {
     @inline(__always)
     public func offset(_ x: Int, _ y: Int) -> Int { (y * width + x) * 4 }
 
+    /// PNG encoding, so a failing frame can be captured on device and reproduced offline.
+    public func pngData() -> Data? {
+        guard let provider = CGDataProvider(data: Data(rgba) as CFData) else { return nil }
+        let space = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+        let info = CGBitmapInfo(
+            rawValue: CGImageAlphaInfo.premultipliedLast.rawValue
+                | CGBitmapInfo.byteOrder32Big.rawValue
+        )
+        guard let cg = CGImage(
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bitsPerPixel: 32,
+            bytesPerRow: width * 4,
+            space: space,
+            bitmapInfo: info,
+            provider: provider,
+            decode: nil,
+            shouldInterpolate: false,
+            intent: .defaultIntent
+        ) else { return nil }
+
+        let out = NSMutableData()
+        guard let dest = CGImageDestinationCreateWithData(
+            out, "public.png" as CFString, 1, nil
+        ) else { return nil }
+        CGImageDestinationAddImage(dest, cg, nil)
+        guard CGImageDestinationFinalize(dest) else { return nil }
+        return out as Data
+    }
+
     @inline(__always)
     public func rgb(_ x: Int, _ y: Int) -> (r: Int, g: Int, b: Int) {
         let o = offset(x, y)

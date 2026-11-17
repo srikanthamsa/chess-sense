@@ -20,6 +20,7 @@
 		2A9A3DC978B13D356A69BCAE /* Move.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CA8EEF7F8E0173678EB34A1 /* Move.swift */; };
 		341A044ADD6161DF9C56E6B4 /* BoardPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93284D4CEC5594349AE37627 /* BoardPalette.swift */; };
 		4073535F2F19DDCAAE0AD899 /* BestMoveWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = E809E3AE642D26B99C001B58 /* BestMoveWidgets.swift */; };
+		4240301DF4418C231DDB48C8 /* Diagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00FC3DFC1B7E50162BD3B068 /* Diagnostics.swift */; };
 		44325BBC67C44DED418CC778 /* Square.swift in Sources */ = {isa = PBXBuildFile; fileRef = C728D80ADB01127D733E3C6C /* Square.swift */; };
 		4AF0F5DFF1B83A4E23986911 /* AnalysisPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7673827281780BE6474C3A2 /* AnalysisPipeline.swift */; };
 		4FF5286C4D2CFAAD686042FE /* ChessPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFD5F504898CA4E8D1FF18DD /* ChessPosition.swift */; };
@@ -78,9 +79,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		00FC3DFC1B7E50162BD3B068 /* Diagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostics.swift; sourceTree = "<group>"; };
 		05DF3FEF2103FB5450D2FFB8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0B039C6A3289343D6855A082 /* Piece.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Piece.swift; sourceTree = "<group>"; };
-		1C2B0E85F208EB2D6622A025 /* ChessSense.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChessSense.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1C2B0E85F208EB2D6622A025 /* ChessSense.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ChessSense.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D81CF5DA2C96A53B220BFDC /* BoardLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardLocator.swift; sourceTree = "<group>"; };
 		215D655E9AA76356472AF876 /* LiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityController.swift; sourceTree = "<group>"; };
 		37FC99D8AF824AD84CC9B197 /* EngineBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineBackend.swift; sourceTree = "<group>"; };
@@ -174,6 +176,7 @@
 				4B8F65A876CB6971684D12AA /* CalibrationStore.swift */,
 				47A2A2B80787140525AF7B09 /* ChessSenseApp.swift */,
 				440122C1C88B7305D3982860 /* ContentView.swift */,
+				00FC3DFC1B7E50162BD3B068 /* Diagnostics.swift */,
 				5267AF95E90FDC18A5669002 /* Info.plist */,
 				215D655E9AA76356472AF876 /* LiveActivityController.swift */,
 				5BBFC2BD746F5D8BA9936607 /* SelfTest.swift */,
@@ -333,6 +336,7 @@
 				4FF5286C4D2CFAAD686042FE /* ChessPosition.swift in Sources */,
 				20A5034DD34B4B009F6DDFC9 /* ChessSenseApp.swift in Sources */,
 				E9196A0B01E5E84D2DF35596 /* ContentView.swift in Sources */,
+				4240301DF4418C231DDB48C8 /* Diagnostics.swift in Sources */,
 				27E803524E1159F9B16253BA /* EngineBackend.swift in Sources */,
 				F8CE6430DB2B2ADC6BF3D62A /* EngineMove.swift in Sources */,
 				02C13AF73E8887849A2E6ECB /* LiveActivityController.swift in Sources */,
@@ -414,7 +418,6 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Chess Sense";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -580,7 +583,6 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Chess Sense";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

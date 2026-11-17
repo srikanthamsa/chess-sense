@@ -40,9 +40,18 @@ enum AnalysisPipeline {
     ) async throws -> Outcome {
         guard let book = store.loadBook() else { throw BoardError.notCalibrated }
 
-        let read = try BoardReader.read(image: image, book: book, rect: store.loadRect())
+        let read: BoardRead
+        do {
+            read = try BoardReader.read(image: image, book: book, rect: store.loadRect())
+        } catch {
+            // Keep the frame so the failure can be turned into a test instead of a guess.
+            Diagnostics.record(image: image, reason: "\(error)", book: book,
+                               rectOverride: store.loadRect())
+            throw error
+        }
 
         guard read.isTrustworthy else {
+            Diagnostics.record(image: image, reason: "rejected-read", book: book, rectOverride: read.rect)
             return Outcome(
                 fen: read.fen,
                 readFEN: read.fen,
