@@ -83,16 +83,22 @@ public enum SquareExtractor {
     }
 
     /// Inner bounds of a square, after the inset that dodges grid lines and labels.
+    /// Bounds of a square's interior, clamped to the image.
+    ///
+    /// The clamp is load-bearing, not defensive garnish. Continuous mode streams frames at
+    /// half scale, so a rectangle learned from a full-resolution screenshot lands outside the
+    /// buffer; unclamped loops then walk past the end of `rgba` and trap. A frame that no
+    /// longer contains the assumed board must degrade to a bad read, never to a crash.
     static func innerBounds(
-        rect: BoardRect, rank: Int, file: Int
+        image: PixelImage, rect: BoardRect, rank: Int, file: Int
     ) -> (x0: Int, y0: Int, x1: Int, y1: Int, w: Int, h: Int) {
         let sq = rect.squareRect(rank: rank, file: file)
         let insetX = Int(Double(sq.w) * inset)
         let insetY = Int(Double(sq.h) * inset)
-        let x0 = sq.x + insetX
-        let y0 = sq.y + insetY
-        let x1 = sq.x + sq.w - insetX
-        let y1 = sq.y + sq.h - insetY
+        let x0 = max(0, min(image.width - 1, sq.x + insetX))
+        let y0 = max(0, min(image.height - 1, sq.y + insetY))
+        let x1 = max(x0 + 1, min(image.width, sq.x + sq.w - insetX))
+        let y1 = max(y0 + 1, min(image.height, sq.y + sq.h - insetY))
         return (x0, y0, x1, y1, max(1, x1 - x0), max(1, y1 - y0))
     }
 
@@ -104,7 +110,7 @@ public enum SquareExtractor {
     public static func cornerModes(
         image: PixelImage, rect: BoardRect, rank: Int, file: Int
     ) -> [RGB] {
-        let b = innerBounds(rect: rect, rank: rank, file: file)
+        let b = innerBounds(image: image, rect: rect, rank: rank, file: file)
         let patch = max(3, Int(Double(min(b.w, b.h)) * cornerPatch))
         let inset = max(1, Int(Double(min(b.w, b.h)) * cornerInset))
         let origins = [
@@ -138,7 +144,7 @@ public enum SquareExtractor {
     public static func ringMode(
         image: PixelImage, rect: BoardRect, rank: Int, file: Int
     ) -> RGB {
-        let b = innerBounds(rect: rect, rank: rank, file: file)
+        let b = innerBounds(image: image, rect: rect, rank: rank, file: file)
         let ringW = max(2, Int(Double(min(b.w, b.h)) * ringWidth))
         var hist = [Int](repeating: 0, count: 4096)
         for y in b.y0..<b.y1 {
@@ -186,7 +192,7 @@ public enum SquareExtractor {
         rank: Int,
         file: Int
     ) -> SquareSignature {
-        let b = innerBounds(rect: rect, rank: rank, file: file)
+        let b = innerBounds(image: image, rect: rect, rank: rank, file: file)
         let bg = palette.background(rank: rank, file: file, image: image, rect: rect)
         let bgLuma = bg.luminance
         let brightThreshold = min(bgLuma + brightenMargin, brightThresholdCap)

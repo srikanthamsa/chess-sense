@@ -53,7 +53,13 @@ enum Diagnostics {
             "build": Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?",
             "recordedAt": stamp,
         ]
-        if let rect = rectOverride ?? BoardLocator.locate(image) {
+        // A stored rectangle belongs to the resolution it was learned at. Continuous mode
+        // streams half-scale frames, so sampling the stored rectangle against a smaller image
+        // walked off the end of the buffer and crashed the app on its first frame. Prefer a
+        // rectangle that actually fits this frame; skip the sampling if none does.
+        let candidate = rectOverride ?? BoardLocator.locate(image)
+        let rect = candidate.flatMap { BoardReader.fits($0, in: image) ? $0 : BoardLocator.locate(image) }
+        if let rect, BoardReader.fits(rect, in: image) {
             report["boardRect"] = [rect.x, rect.y, rect.width, rect.height]
             let palette = BoardPalette.estimate(image: image, rect: rect)
             report["palette"] = [

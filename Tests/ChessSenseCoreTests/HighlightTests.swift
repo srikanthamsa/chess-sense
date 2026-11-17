@@ -214,3 +214,50 @@ final class HighlightTests: XCTestCase {
         return PixelImage(width: image.width, height: image.height, rgba: rgba)
     }
 }
+
+/// Continuous mode streams frames at half scale. A rectangle learned from a full-resolution
+/// screenshot therefore lands outside the frame, and the crash on 2026-11-17 was an
+/// out-of-range pixel read in exactly that situation. Geometry must degrade, never trap.
+final class OversizedRectTests: XCTestCase {
+
+    private func fixture(_ name: String) throws -> PixelImage {
+        let url = try XCTUnwrap(
+            Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Fixtures")
+        )
+        return try XCTUnwrap(PixelImage(contentsOf: url))
+    }
+
+    /// Half the pixels, same rectangle: every sampler is asked for coordinates it cannot have.
+    func testFullScaleRectAgainstAHalfScaleFrameDoesNotTrap() throws {
+        let full = try fixture("taketaketake-start")
+        let rect = try XCTUnwrap(BoardLocator.locate(full))
+        XCTAssertTrue(BoardReader.fits(rect, in: full))
+
+        let half = try XCTUnwrap(full.downscaledForTest(by: 0.5))
+        XCTAssertFalse(BoardReader.fits(rect, in: half),
+                       "a 1206 pt rect cannot fit a 603 pt frame")
+
+        // None of these may trap; the values they return are not the point.
+        _ = BoardPalette.estimate(image: half, rect: rect)
+        _ = SquareExtractor.ringMode(image: half, rect: rect, rank: 0, file: 0)
+        let palette = BoardPalette.estimate(image: half, rect: rect)
+        _ = SquareExtractor.extractSquare(image: half, rect: rect, palette: palette,
+                                          rank: 7, file: 7)
+    }
+
+    /// The whole read path, which is what the app actually calls.
+    func testReadingAHalfScaleFrameRejectsInsteadOfCrashing() throws {
+        let full = try fixture("taketaketake-start")
+        let (book, _, _) = try BoardReader.calibrate(image: full)
+        let rect = try XCTUnwrap(BoardLocator.locate(full))
+        let half = try XCTUnwrap(full.downscaledForTest(by: 0.5))
+
+        do {
+            let read = try BoardReader.read(image: half, book: book, rect: rect)
+            XCTAssertTrue(read.fen.contains("/"), "a successful read must still be a FEN")
+        } catch {
+            // A rejected read is the correct outcome for a frame the book cannot resolve.
+            XCTAssertNotNil(error as? BoardError)
+        }
+    }
+}

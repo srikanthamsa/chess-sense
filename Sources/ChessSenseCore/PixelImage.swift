@@ -86,6 +86,29 @@ public struct PixelImage: Sendable {
         return PixelImage(width: newWidth, height: newHeight, rgba: out)
     }
 
+    /// Nearest-neighbour scale-down, used by tests to mimic the broadcast extension's
+    /// half-resolution frames without a CoreGraphics dependency in the core module.
+    public func downscaledForTest(by factor: Double) -> PixelImage? {
+        guard factor > 0, factor < 1 else { return nil }
+        let w = Int(Double(width) * factor)
+        let h = Int(Double(height) * factor)
+        guard w > 0, h > 0 else { return nil }
+        var out = [UInt8](repeating: 0, count: w * h * 4)
+        for y in 0..<h {
+            let sy = min(height - 1, Int(Double(y) / factor))
+            for x in 0..<w {
+                let sx = min(width - 1, Int(Double(x) / factor))
+                let src = offset(sx, sy)
+                let dst = (y * w + x) * 4
+                out[dst] = rgba[src]
+                out[dst + 1] = rgba[src + 1]
+                out[dst + 2] = rgba[src + 2]
+                out[dst + 3] = rgba[src + 3]
+            }
+        }
+        return PixelImage(width: w, height: h, rgba: out)
+    }
+
     public func offset(_ x: Int, _ y: Int) -> Int {
         // Clamped on purpose. Callers work inside a validated rectangle, but a stale
         // rectangle against a smaller image (a broadcast frame at half resolution) used to
