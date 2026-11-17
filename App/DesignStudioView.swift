@@ -26,9 +26,11 @@ struct DesignStudioView: View {
         var state: BestMoveAttributes.ContentState {
             switch self {
             case .waiting:
-                return .init(uci: "----", san: "", evalText: "---",
+                // Mirrors `LiveActivityController.start()`: nothing has been read, so there
+                // is no evaluation to show.
+                return .init(uci: "----", san: "", evalText: "",
                              principalVariation: "", provenance: "waiting for a screenshot",
-                             trusted: true, why: "", playerEval: "0.00", pieceSymbol: "")
+                             trusted: true, why: "", playerEval: "", pieceSymbol: "")
             case .thinking:
                 return .init(uci: "----", san: "", evalText: "+0.20",
                              principalVariation: "", provenance: "reading the board",
@@ -41,9 +43,12 @@ struct DesignStudioView: View {
                              why: "Your queen slides onto the open diagonal and takes that pawn, so you are simply a piece up here.",
                              playerEval: "+2.32", pieceSymbol: "\u{265B}", tip: "Your queen takes the bishop and hits the king.")
             case .unclear:
+                // What production actually sends for a failed read: a plain-English reason
+                // the player can act on. The studio previews it so this copy is reviewed.
                 return .init(uci: "--", san: "", evalText: "!",
-                             principalVariation: "board read was not confident",
-                             provenance: "rejected", trusted: false, why: "")
+                             principalVariation: "",
+                             provenance: "rejected", trusted: false,
+                             why: "No chess board found there. Screenshot the whole game.")
             case .mate:
                 return .init(uci: "a1a8", san: "Ra8#", evalText: "#1",
                              principalVariation: "Ra8#",
@@ -104,8 +109,10 @@ struct DesignStudioView: View {
     private var compact: some View {
         HStack(spacing: 26) {
             HStack(spacing: 8) {
-                IslandCompactLeading(trusted: sample.state.trusted,
-                                     accent: IslandAccent.resolve(sample.state))
+                IslandCompactLeading(move: sample.state.displayMove,
+                                     trusted: sample.state.trusted,
+                                     accent: IslandAccent.resolve(sample.state),
+                                     presentation: IslandPresentation(sample.state))
                 IslandCompactTrailing(move: sample.state.displayMove,
                                       trusted: sample.state.trusted,
                                       accent: IslandAccent.resolve(sample.state),

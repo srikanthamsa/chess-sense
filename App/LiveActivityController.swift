@@ -21,10 +21,12 @@ enum LiveActivityController {
     @discardableResult
     static func start() throws -> Bool {
         guard activitiesEnabled, !isRunning else { return isRunning }
+        // No evaluation yet: the board has not been read. Shipping "+0.0" here made the
+        // Island claim "dead equal" for a position nobody had seen.
         let state = BestMoveAttributes.ContentState(
             uci: "----",
             san: "",
-            evalText: "+0.0",
+            evalText: "",
             principalVariation: "",
             provenance: "waiting for a position",
             trusted: true,
@@ -53,6 +55,49 @@ enum LiveActivityController {
         await activity.update(ActivityContent(state: state, staleDate: nil))
     }
 
+    /// Pure: what the activity should hold for a given outcome.
+    ///
+    /// Split out from `update` because `activity.content.state` only reflects the last
+    /// *delivered* update, so asserting a round-trip there measures ActivityKit's
+    /// propagation latency rather than this mapping. It also pins the bug where `update`
+    /// accepted `tip`, `pieceSymbol` and `playerEval` and then dropped them on the floor.
+    static func makeState(
+        _ move: EngineMove?, why: String, trusted: Bool,
+        playerEval: String, pieceSymbol: String, tip: String
+    ) -> BestMoveAttributes.ContentState {
+        if let move, trusted {
+            return .init(
+                uci: move.uci,
+                san: move.san ?? "",
+                evalText: move.evalText,
+                principalVariation: move.principalVariation,
+                provenance: move.provenance,
+                trusted: true,
+                why: why,
+                playerEval: playerEval,
+                pieceSymbol: pieceSymbol,
+                tip: tip
+            )
+        }
+        return .init(
+            uci: "--",
+            san: "",
+            evalText: "0.0",
+            principalVariation: "",
+            provenance: "rejected",
+            trusted: false,
+            // Prefer a caller-supplied explanation: it is the only one that can say what
+            // actually went wrong in words the player can act on. The hard-coded sentence is
+            // the fallback for callers that have nothing specific to add.
+            why: why.isEmpty
+                ? (trusted
+                    ? "The engine had nothing for this position."
+                    : "I could not read the board confidently, so I am not going to guess.")
+                : why,
+            playerEval: playerEval
+        )
+    }
+
     /// Pushes a new best move, or an explicit "I could not read the board" state.
     /// A low-confidence read must never be rendered as a move.
     ///
@@ -66,30 +111,8 @@ enum LiveActivityController {
             _ = try? start()
         }
         guard let activity = Activity<BestMoveAttributes>.activities.first else { return }
-        let state: BestMoveAttributes.ContentState
-        if let move, trusted {
-            state = .init(
-                uci: move.uci,
-                san: move.san ?? "",
-                evalText: move.evalText,
-                principalVariation: move.principalVariation,
-                provenance: move.provenance,
-                trusted: true,
-                why: why
-            )
-        } else {
-            state = .init(
-                uci: "--",
-                san: "",
-                evalText: "0.0",
-                principalVariation: "",
-                provenance: "rejected",
-                trusted: false,
-                why: trusted
-                    ? "The engine had nothing for this position."
-                    : "I could not read the board confidently, so I am not going to guess."
-            )
-        }
+        let state = makeState(move, why: why, trusted: trusted,
+                              playerEval: playerEval, pieceSymbol: pieceSymbol, tip: tip)
         await activity.update(ActivityContent(state: state, staleDate: nil))
     }
 

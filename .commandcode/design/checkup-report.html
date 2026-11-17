@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>chess-sense - Checkup Report</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<style>
+		body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+		.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+		.report-section { border: 1px solid #222226; background: #0a0a0b; position: relative; }
+		.corner-box { position: absolute; width: 20px; height: 20px; border: 1px solid #222226; background: #000; }
+	</style>
+</head>
+<body class="bg-black text-[#fafafa]">
+	<main class="mx-auto w-full max-w-5xl px-5 py-8 md:px-10 md:py-12">
+
+		<header class="report-section mb-8 p-6 md:p-8">
+			<div class="corner-box left-0 top-0 -translate-x-1/2 -translate-y-1/2"></div>
+			<div class="corner-box right-0 top-0 translate-x-1/2 -translate-y-1/2"></div>
+			<div class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+				<div>
+					<div class="mono mb-2 text-xs tracking-widest text-[#666]">// CHECKUP — REMEDIATED</div>
+					<h1 class="text-4xl font-bold tracking-tight md:text-6xl">chess-sense</h1>
+					<p class="mono mt-3 text-xs text-[#555]">iOS app &middot; Dynamic Island &middot; design studio</p>
+				</div>
+				<div class="mono text-left text-xs text-[#666] md:text-right">
+					<div>COMMANDCODE REPORT</div>
+					<div class="text-[#444]">2026-11-17</div>
+				</div>
+			</div>
+		</header>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="corner-box left-0 top-0 -translate-x-1/2 -translate-y-1/2"></div>
+			<div class="corner-box right-0 top-0 translate-x-1/2 -translate-y-1/2"></div>
+			<div class="grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+				<div>
+					<div class="mono mb-2 text-xs tracking-widest text-[#666]">// OVERALL</div>
+					<div class="flex items-baseline gap-3">
+						<span class="text-3xl font-bold text-[#666] line-through md:text-4xl">20</span>
+						<span class="text-[#444]">&rarr;</span>
+						<span class="text-6xl font-bold tracking-tight md:text-7xl">60</span>
+					</div>
+					<div class="mt-1 text-lg text-[#666]">/ 60</div>
+					<div class="mt-4 inline-flex border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-3 py-1 text-sm text-[#fbbf24]">NEEDS CHANGES</div>
+				</div>
+				<div>
+					<div class="mono mb-3 text-xs tracking-widest text-[#666]">// TL;DR</div>
+					<p class="text-sm leading-6 text-[#a0a0a0]">Every HIGH is closed and verified. The expanded Island now actually receives its coaching sentence, its piece glyph and an evaluation signed for the player holding the phone. The two lock-screen labels that measured under 3:1 now clear 6:1.</p>
+					<p class="mt-4 text-sm leading-6 text-[#34d399]">One unlisted defect turned up while verifying: <span class="mono text-[#fafafa]">SelfTest</span> had been unreachable since commit 3555511, so <span class="mono text-[#fafafa]">-chesssense-selftest</span> was a silent no-op. Restored, and the report now records fresh runs rather than a stale file.</p>
+				</div>
+			</div>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// VITAL SIGNS</div>
+			<div class="overflow-x-auto">
+				<table class="w-full min-w-[640px] border-collapse text-sm">
+					<thead>
+						<tr class="border-b border-[#222226] text-left mono text-xs text-[#666]">
+							<th class="py-3 pr-4 font-normal">VITAL</th>
+							<th class="py-3 pr-4 font-normal">BEFORE</th>
+							<th class="py-3 pr-4 font-normal">AFTER</th>
+							<th class="py-3 font-normal">WHAT CHANGED</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#fafafa]">Intentionality</td>
+							<td class="py-4 pr-4 mono text-[#fbbf24]">5</td>
+							<td class="py-4 pr-4 mono text-[#34d399]">10</td>
+							<td class="py-4 text-[#a0a0a0]">The shipping Island now receives the tip, the piece glyph and the player-signed eval</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#fafafa]">Readability</td>
+							<td class="py-4 pr-4 mono text-[#ef4444]">0</td>
+							<td class="py-4 pr-4 mono text-[#34d399]">10</td>
+							<td class="py-4 text-[#a0a0a0]">Lock-screen labels raised from 2.75:1 and 2.72:1 to 7.45:1 and 6.06:1</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#fafafa]">Usability</td>
+							<td class="py-4 pr-4 mono text-[#fbbf24]">5</td>
+							<td class="py-4 pr-4 mono text-[#34d399]">10</td>
+							<td class="py-4 text-[#a0a0a0]">Each picker has its own intent; the label no longer lies</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#fafafa]">Responsiveness</td>
+							<td class="py-4 pr-4 mono text-[#fbbf24]">5</td>
+							<td class="py-4 pr-4 mono text-[#34d399]">10</td>
+							<td class="py-4 text-[#a0a0a0]">Headline scales: 126 px &rarr; 182 px tall at AX XXXL</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#fafafa]">Speed</td>
+							<td class="py-4 pr-4 mono text-[#fbbf24]">5</td>
+							<td class="py-4 pr-4 mono text-[#34d399]">10</td>
+							<td class="py-4 text-[#a0a0a0]">Calibration runs off the main actor; the spinner can spin</td>
+						</tr>
+						<tr>
+							<td class="py-4 pr-4 text-[#fafafa]">Accessibility</td>
+							<td class="py-4 pr-4 mono text-[#ef4444]">0</td>
+							<td class="py-4 pr-4 mono text-[#34d399]">10</td>
+							<td class="py-4 text-[#a0a0a0]">Reduce Motion gates both loops; destructive targets &ge; 44 pt</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// MEASURED EVIDENCE</div>
+			<div class="grid gap-6 md:grid-cols-2">
+				<div>
+					<div class="mono mb-3 text-xs tracking-widest text-[#666]">CONTRAST BEFORE &rarr; AFTER</div>
+					<table class="w-full border-collapse text-sm">
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-2 pr-3 text-[#a0a0a0]">BEST MOVE / UNCLEAR</td>
+							<td class="py-2 text-right mono text-[#ef4444]">2.75:1</td>
+							<td class="py-2 pl-2 text-right mono text-[#34d399]">7.45:1</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-2 pr-3 text-[#a0a0a0]">provenance</td>
+							<td class="py-2 text-right mono text-[#ef4444]">2.72:1</td>
+							<td class="py-2 pl-2 text-right mono text-[#34d399]">6.06:1</td>
+						</tr>
+						<tr>
+							<td class="py-2 pr-3 text-[#a0a0a0]">chess-sense header (untouched)</td>
+							<td class="py-2 text-right mono text-[#666]">4.77:1</td>
+							<td class="py-2 pl-2 text-right mono text-[#666]">5.26:1</td>
+						</tr>
+					</table>
+				</div>
+				<div>
+					<div class="mono mb-3 text-xs tracking-widest text-[#666]">REDUCE MOTION — PIXEL DIFF / FRAME</div>
+					<table class="w-full border-collapse text-sm">
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-2 pr-3 text-[#a0a0a0]">Setting off (animation runs)</td>
+							<td class="py-2 text-right mono text-[#fbbf24]">47.9%</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-2 pr-3 text-[#a0a0a0]">Setting on (gate holds)</td>
+							<td class="py-2 text-right mono text-[#34d399]">0.0%</td>
+						</tr>
+						<tr>
+							<td class="py-2 pr-3 text-[#a0a0a0]">Dynamic Type headline band</td>
+							<td class="py-2 text-right mono text-[#34d399]">126 &rarr; 182 px</td>
+						</tr>
+					</table>
+				</div>
+			</div>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// THE THREE HIGH FINDINGS, CLOSED</div>
+			<div class="space-y-5">
+				<article class="border border-[#12261f] bg-[#08120e] p-5">
+					<div class="mb-2 flex items-center gap-3">
+						<span class="mono text-xs text-[#34d399]">HIGH &middot; SURFACE &middot; FIXED</span>
+					</div>
+					<h2 class="mb-2 text-lg font-semibold">The Live Activity dropped the tip, the piece glyph and the player-signed evaluation</h2>
+					<p class="mb-3 mono text-xs text-[#666]">App/LiveActivityController.swift</p>
+					<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">The state mapping is now a pure function, <span class="mono">makeState</span>, which passes all three through. <span class="mono">playerEval</span> is also carried into the rejected branch so an unclear read still shows the player's own perspective.</p>
+					<div class="border-l border-[#34d399] pl-4 text-sm leading-6 text-[#34d399]">VERIFIED: <span class="mono">SELFTEST PASS island state carries tip + piece + signed eval: tip + &#9822; + -0.25</span>. Reverting the fix makes the same assertion fail, so it is a real guard.</div>
+				</article>
+
+				<article class="border border-[#12261f] bg-[#08120e] p-5">
+					<div class="mb-2 flex items-center gap-3">
+						<span class="mono text-xs text-[#34d399]">HIGH &middot; MOTION &middot; FIXED</span>
+					</div>
+					<h2 class="mb-2 text-lg font-semibold">Motion ran forever with no Reduce Motion path</h2>
+					<p class="mb-3 mono text-xs text-[#666]">Shared/IslandViews.swift &mdash; SkeletonBar, thinking sparkle</p>
+					<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">Both now read <span class="mono">@Environment(\.accessibilityReduceMotion)</span> and hold a static state when it is on. Four captures 350 ms apart: the skeleton region changed <strong>47.9%</strong> of its pixels per frame with the setting off, and <strong>0%</strong> with it on.</p>
+					<div class="border-l border-[#34d399] pl-4 text-sm leading-6 text-[#34d399]">VERIFIED: the animation genuinely stops, rather than a branch that merely compiles.</div>
+				</article>
+
+				<article class="border border-[#12261f] bg-[#08120e] p-5">
+					<div class="mb-2 flex items-center gap-3">
+						<span class="mono text-xs text-[#34d399]">HIGH &middot; COLOR &middot; FIXED</span>
+					</div>
+					<h2 class="mb-2 text-lg font-semibold">Meaning-carrying lock-screen labels failed contrast</h2>
+					<p class="mb-3 mono text-xs text-[#666]">Shared/IslandViews.swift:509-513, :492-496</p>
+					<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">State label raised from <span class="mono">.white.opacity(0.32)</span> to <span class="mono">0.62</span>; provenance from <span class="mono">0.3</span> to <span class="mono">0.55</span>. Re-measured on the same 2&times; render: <strong>2.75:1 &rarr; 7.45:1</strong> and <strong>2.72:1 &rarr; 6.06:1</strong>.</p>
+					<div class="border-l border-[#34d399] pl-4 text-sm leading-6 text-[#34d399]">VERIFIED against the rendered PNG, not the declared colour.</div>
+				</article>
+			</div>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// MEDIUM FINDINGS, CLOSED</div>
+			<div class="overflow-x-auto">
+				<table class="w-full min-w-[720px] border-collapse text-sm">
+					<thead>
+						<tr class="border-b border-[#222226] text-left mono text-xs text-[#666]">
+							<th class="py-3 pr-4 font-normal">FINDING</th>
+							<th class="py-3 pr-4 font-normal">LOCATION</th>
+							<th class="py-3 font-normal">FIX</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#fafafa]">Two pickers shared one binding</td>
+							<td class="py-4 pr-4 mono text-xs text-[#666]">ContentView.swift:7</td>
+							<td class="py-4 text-[#a0a0a0]"><span class="mono">PickIntent</span> enum and two separate <span class="mono">PhotosPickerItem</span> states; the handler switches on intent</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#fafafa]">Destructive targets under 44 pt</td>
+							<td class="py-4 pr-4 mono text-xs text-[#666]">ContentView.swift:131, :171, :212</td>
+							<td class="py-4 text-[#a0a0a0]"><span class="mono">.frame(minWidth: 44, minHeight: 44).contentShape(Rectangle())</span> on all three</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#fafafa]">Waiting state fabricated an evaluation</td>
+							<td class="py-4 pr-4 mono text-xs text-[#666]">LiveActivityController.swift:24</td>
+							<td class="py-4 text-[#a0a0a0]">Seeds <span class="mono">evalText: ""</span>; pill, compact trailing and bar render nothing for an empty eval</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#fafafa]">Headline stopped scaling</td>
+							<td class="py-4 pr-4 mono text-xs text-[#666]">ContentView.swift:64</td>
+							<td class="py-4 text-[#a0a0a0]"><span class="mono">@ScaledMetric(relativeTo: .largeTitle)</span> replaces the fixed 40 pt</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#fafafa]">Board analysis blocked the main actor</td>
+							<td class="py-4 pr-4 mono text-xs text-[#666]">ContentView.swift:281</td>
+							<td class="py-4 text-[#a0a0a0]"><span class="mono">AnalysisPipeline.calibrateOffMain</span> runs the pixel scan in a detached task</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#fafafa]">Error copy leaked internal jargon</td>
+							<td class="py-4 pr-4 mono text-xs text-[#666]">ContentView.swift:323</td>
+							<td class="py-4 text-[#a0a0a0]"><span class="mono">recovery(for:)</span> maps each <span class="mono">BoardError</span> to an actionable sentence; raw numbers stay in Details</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#fafafa]">Eval announced two or three times</td>
+							<td class="py-4 pr-4 mono text-xs text-[#666]">IslandViews.swift</td>
+							<td class="py-4 text-[#a0a0a0]">Decorative arrows hidden; pill labels itself in words; bar hidden from tree; lock card composited</td>
+						</tr>
+						<tr>
+							<td class="py-4 pr-4 text-[#fafafa]">Fixed 10 pt monospace FEN</td>
+							<td class="py-4 pr-4 mono text-xs text-[#666]">ContentView.swift:208</td>
+							<td class="py-4 text-[#a0a0a0]"><span class="mono">.system(.caption2, design: .monospaced)</span></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// FOUND WHILE VERIFYING</div>
+			<article class="border border-[#2a2416] bg-[#12100a] p-5">
+				<div class="mono mb-2 text-xs text-[#fbbf24]">DEAD CODE &middot; FIXED</div>
+				<h2 class="mb-2 text-lg font-semibold">SelfTest had been unreachable since commit 3555511</h2>
+				<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">Commit 3555511 deleted the <span class="mono">.task { guard SelfTest.requested … }</span> hook from <span class="mono">ContentView</span>, so <span class="mono">-chesssense-selftest</span> had been a silent no-op and the README's instructions did nothing. Restored at <span class="mono">ContentView.swift:58-68</span>. This also corrects the first report in this series, which quoted a stale report file left in the simulator container by an earlier run.</p>
+				<div class="border-l border-[#fbbf24] pl-4 text-sm leading-6 text-[#fbbf24]">The runs now quoted are fresh, from a clean install, and the report timestamp moves with each launch.</div>
+			</article>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// ROUND 2 — REPORTED FROM THE PHONE</div>
+			<div class="space-y-5">
+				<article class="border border-[#12261f] bg-[#08120e] p-5">
+					<div class="mono mb-2 text-xs text-[#34d399]">HIGH &middot; SURFACE &middot; FIXED</div>
+					<h2 class="mb-2 text-lg font-semibold">The Island showed a message box instead of the move</h2>
+					<p class="mb-3 mono text-xs text-[#666]">App/AnalyzeBoardIntent.swift</p>
+					<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">The App Intent returned an <span class="mono">IntentResult &amp; ProvidesDialog</span>, so every Shortcut run popped a system banner. On failure it printed <span class="mono">Failed: no template matched a8 (closest shape distance 100)</span> over the game. It now returns a plain <span class="mono">.result()</span> and says everything through the Island.</p>
+					<div class="border-l border-[#34d399] pl-4 text-sm leading-6 text-[#34d399]">Failures are pushed into the live activity as a plain-English reason, which the Island's tip row now prefers over its generic sentence.</div>
+				</article>
+
+				<article class="border border-[#12261f] bg-[#08120e] p-5">
+					<div class="mono mb-2 text-xs text-[#34d399]">HIGH &middot; WRITING &middot; FIXED</div>
+					<h2 class="mb-2 text-lg font-semibold">Internal terms could still reach the player</h2>
+					<p class="mb-3 mono text-xs text-[#666]">Sources/ChessSenseCore/Piece.swift</p>
+					<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">Added <span class="mono">userFacingDescription</span> beside the existing <span class="mono">description</span>. The old string stays for logs and <span class="mono">Diagnostics</span>; only the new one may appear on screen. Every surface was routed through it, including the App Intent, the app's error line, the "no move" line, and the Live Activity start failure.</p>
+					<div class="border-l border-[#34d399] pl-4 text-sm leading-6 text-[#34d399]">Pinned by <span class="mono">ErrorCopyTests</span>: every case must fit the 60-character Island slot, read as a whole sentence, and name no internal machinery.</div>
+				</article>
+
+				<article class="border border-[#12261f] bg-[#08120e] p-5">
+					<div class="mono mb-2 text-xs text-[#34d399]">MEDIUM &middot; TYPE &amp; SURFACE &middot; FIXED</div>
+					<h2 class="mb-2 text-lg font-semibold">The glyph was too small, and the rest state showed static dots</h2>
+					<p class="mb-3 mono text-xs text-[#666]">Shared/IslandViews.swift &mdash; PieceBadge, IslandCompactLeading</p>
+					<p class="mb-4 text-sm leading-6 text-[#a0a0a0]"><span class="mono">PieceBadge</span> drew <span class="mono">diameter * 0.82</span> — a 19.7 pt glyph in a 24 pt frame. Now it fills a 26 pt frame; measured ink went from ~16.7 pt to <strong>21.5 &times; 23 pt</strong>. The compact leading was a four-dot checker mark that never animated and carried nothing; it now shows the move itself.</p>
+					<div class="border-l border-[#34d399] pl-4 text-sm leading-6 text-[#34d399]">Verified in the studio render: compact leading reads <span class="mono">Qxd4</span> instead of dots. The rejected tip reads "No chess board found there. Screenshot the whole game." in two complete lines.</div>
+				</article>
+			</div>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// ON YOUR IPHONE</div>
+			<div class="grid gap-6 md:grid-cols-2">
+				<div class="space-y-2 text-sm text-[#a0a0a0]">
+					<div class="flex justify-between border-b border-[#1a1a1e] py-2"><span>Signed</span><span class="mono text-[#34d399]">team XKAAC8TL59</span></div>
+					<div class="flex justify-between border-b border-[#1a1a1e] py-2"><span>Installed via devicectl</span><span class="mono text-[#34d399]">App installed</span></div>
+					<div class="flex justify-between border-b border-[#1a1a1e] py-2"><span>Build time</span><span class="mono text-[#34d399]">17:23</span></div>
+					<div class="flex justify-between py-2"><span>App binary carries new copy</span><span class="mono text-[#34d399]">yes</span></div>
+				</div>
+				<div class="space-y-2 text-sm text-[#a0a0a0]">
+					<div class="flex justify-between border-b border-[#1a1a1e] py-2"><span>Widget extension rebuilt</span><span class="mono text-[#34d399]">17:23</span></div>
+					<div class="flex justify-between border-b border-[#1a1a1e] py-2"><span>Widget carries new copy</span><span class="mono text-[#34d399]">yes</span></div>
+					<div class="flex justify-between border-b border-[#1a1a1e] py-2"><span>Tests</span><span class="mono text-[#34d399]">83 passing</span></div>
+					<div class="flex justify-between py-2"><span>Island watched live on device</span><span class="mono text-[#fbbf24]">not yet — phone locked</span></div>
+				</div>
+			</div>
+			<p class="mt-5 text-sm leading-6 text-[#a0a0a0]">An earlier report implied this was already on the phone. It was not: that "device build" used <span class="mono">CODE_SIGNING_ALLOWED=NO</span> and produced an artifact that cannot be installed. This round used real automatic signing.</p>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// VERIFICATION</div>
+			<div class="grid gap-6 md:grid-cols-2">
+				<div>
+					<div class="mb-3 text-sm font-semibold text-[#34d399]">Checks run</div>
+					<ul class="space-y-2 text-sm text-[#a0a0a0]">
+						<li>swift test &mdash; 79 tests, 0 failures</li>
+						<li>xcodebuild arm64 device &mdash; BUILD SUCCEEDED</li>
+						<li>xcodebuild iOS 27.2 simulator &mdash; BUILD SUCCEEDED</li>
+						<li>Clean install + selftest &mdash; RESULT PASSED, incl. new assertion</li>
+						<li>Fix reverted on purpose &mdash; assertion FAILED, then restored</li>
+						<li>Reduce Motion on/off frame diff &mdash; 0% vs 47.9%</li>
+						<li>Contrast re-measured on rendered pixels</li>
+						<li>AX XXXL re-captured &mdash; 126 px &rarr; 182 px</li>
+						<li>All five Island states re-screenshotted</li>
+					</ul>
+				</div>
+				<div>
+					<div class="mb-3 text-sm font-semibold text-[#fbbf24]">Not verified</div>
+					<ul class="space-y-2 text-sm text-[#a0a0a0]">
+						<li>Product production Island with a real move on a physical device</li>
+						<li>VoiceOver utterance order with a screen reader</li>
+						<li>Device haptics &mdash; nothing tactile touched</li>
+						<li>RTL &mdash; no localisations exist; new copy avoids directional words</li>
+					</ul>
+				</div>
+			</div>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// LEFT ALONE</div>
+			<ul class="space-y-3 text-sm text-[#a0a0a0]">
+				<li><span class="mono mr-2 text-[#666]">SCOPE</span>Unused-<span class="mono">accent</span> warning in <span class="mono">IslandExpandedMove</span> predates this work; one-line cleanup, no user effect</li>
+				<li><span class="mono mr-2 text-[#666]">SCOPE</span>The <span class="mono">?? 0</span> warning in <span class="mono">SelfTest.swift:49</span> is pre-existing and harmless</li>
+				<li><span class="mono mr-2 text-[#666]">DOCS</span>Stale screenshots in <span class="mono">docs/</span> still show the old ellipsized tip; a separate pass</li>
+				<li><span class="mono mr-2 text-[#666]">KEPT</span>Six stacked panels in ContentView; each is discrete configuration with its own action</li>
+			</ul>
+		</section>
+
+		<footer class="mono py-8 text-center text-xs tracking-widest text-[#444]">
+			Generated with CommandCode - 2026-11-17
+		</footer>
+	</main>
+</body>
+</html>

@@ -32,11 +32,26 @@ targets:
       - path: Sources/ChessSenseCore
       - path: Resources/Fixtures
         buildPhase: resources
+      - path: Resources/Fonts
+        buildPhase: resources
+      # Stockfish runs in-process (iOS cannot spawn helpers), so its sources are compiled
+      # into the app target. The widget stays engine-free and small.
+      - path: Vendor/Stockfish
+        type: group
     dependencies:
       - target: ChessSenseWidgets
         embed: true
     settings:
       base:
+        CLANG_CXX_LANGUAGE_STANDARD: c++11
+        # Stockfish is unusable at -Onone: a Debug build searched for minutes. Swift keeps
+        # its own optimisation setting; this only affects the C++ translation units.
+        GCC_OPTIMIZATION_LEVEL: 2
+        GCC_ENABLE_CPP_EXCEPTIONS: NO
+        GCC_ENABLE_CPP_RTTI: NO
+        HEADER_SEARCH_PATHS:
+          - $(SRCROOT)/Vendor/Stockfish
+        SWIFT_OBJC_BRIDGING_HEADER: App/ChessSense-Bridging-Header.h
         PRODUCT_BUNDLE_IDENTIFIER: ai.chesssense.app
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: App/Info.plist
@@ -50,6 +65,9 @@ targets:
         CFBundleShortVersionString: "0.1.0"
         CFBundleVersion: "1"
         UILaunchScreen: {}
+        UIAppFonts:
+          - InstrumentSerif-Regular.ttf
+          - InstrumentSerif-Italic.ttf
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         NSSupportsLiveActivities: true
@@ -64,6 +82,15 @@ targets:
       - path: Sources/ChessSenseCore
     settings:
       base:
+        CLANG_CXX_LANGUAGE_STANDARD: c++11
+        # Stockfish is unusable at -Onone: a Debug build searched for minutes. Swift keeps
+        # its own optimisation setting; this only affects the C++ translation units.
+        GCC_OPTIMIZATION_LEVEL: 2
+        GCC_ENABLE_CPP_EXCEPTIONS: NO
+        GCC_ENABLE_CPP_RTTI: NO
+        HEADER_SEARCH_PATHS:
+          - $(SRCROOT)/Vendor/Stockfish
+        SWIFT_OBJC_BRIDGING_HEADER: App/ChessSense-Bridging-Header.h
         PRODUCT_BUNDLE_IDENTIFIER: ai.chesssense.app.widgets
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Widgets/Info.plist

@@ -1,0 +1,2 @@
+- Prefers plain-English explanations with technical jargon stripped out ("tell me in easy words"), describing changes by user-visible effect rather than internal identifiers. Confidence: 0.6
+- Expects "it works / it's live" claims to be proven on the actual target hardware (signed, installed, and run on the connected iPhone), not inferred from simulator or unsigned generic-device builds; will push back when nothing reached the real device. Confidence: 0.6

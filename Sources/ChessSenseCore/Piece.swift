@@ -116,4 +116,24 @@ public enum BoardError: Error, CustomStringConvertible {
             return "calibration did not reproduce the frame: expected \(expected), got \(got)"
         }
     }
+
+    /// `description` above is for diagnostics and logs: it names internal machinery
+    /// ("template", "shape distance", "board-like region") that means nothing to a player.
+    /// This is the version that is allowed in front of a person — it says what happened and
+    /// what to do about it, and nothing else.
+    ///
+    /// Kept under ~60 characters because the same string renders inside the Dynamic Island's
+    /// two-line tip slot, which never ellipsizes. A longer sentence would be cut mid-word.
+    public var userFacingDescription: String {
+        switch self {
+        case .unreadableImage:
+            return "That screenshot couldn't be opened. Try again."
+        case .notCalibrated:
+            return "Pick a starting-position screenshot first."
+        case .boardNotFound:
+            return "No chess board found there. Screenshot the whole game."
+        case .implausibleRect, .inconsistentCalibration, .unknownSquare, .verificationFailed:
+            return "Couldn't read that board. Screenshot it again."
+        }
+    }
 }

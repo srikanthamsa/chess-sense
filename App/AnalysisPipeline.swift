@@ -204,6 +204,18 @@ enum AnalysisPipeline {
         return verification
     }
 
+    /// `calibrate` is synchronous, so calling it from a `@MainActor` view runs a full
+    /// 1206x1206 pixel scan on the main thread and freezes the UI — including the spinner
+    /// that exists to cover the wait. This hops to a background task and awaits the result.
+    /// (`analyze` needs no wrapper: it is `async` and nonisolated, so SE-0338 already moves
+    /// it off the caller's actor.) `UserDefaults` is thread-safe, so the store is built
+    /// inside the task rather than captured across the boundary.
+    static func calibrateOffMain(imageData: Data) async throws -> BoardRead {
+        try await Task.detached(priority: .userInitiated) {
+            try calibrate(imageData: imageData)
+        }.value
+    }
+
     // MARK: - Publish
 
     /// Shows the engine's move immediately with the offline explanation, then upgrades the

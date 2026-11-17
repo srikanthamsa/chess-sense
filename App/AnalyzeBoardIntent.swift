@@ -21,22 +21,30 @@ struct AnalyzeBoardIntent: AppIntent {
         self.screenshot = screenshot
     }
 
-    func perform() async throws -> some IntentResult & ProvidesDialog {
+    /// Everything this intent has to say goes to the Dynamic Island. It deliberately
+    /// returns no dialog: a Shortcut run from the Action Button used to pop a "Failed:
+    /// no template matched a8 (closest shape distance 100)" banner over the game, which is
+    /// both a second surface to read and internal machinery the player cannot act on.
+    func perform() async throws -> some IntentResult {
         do {
             let result = try await AnalysisPipeline.analyzeAndPublish(imageData: screenshot.data)
-            if let move = result.move, result.trusted {
-                // Interpolated literal, not a String variable: `IntentDialog` is
-                // ExpressibleByStringInterpolation, so only literals convert implicitly.
-                return .result(dialog: "\(move.displayMove)  \(move.evalText)")
-            }
-            if !result.trusted {
-                return .result(dialog: "Board read was not confident — nothing shown.")
-            }
-            return .result(dialog: "\(result.failure ?? "No move available.")")
-        } catch BoardError.notCalibrated {
-            return .result(dialog: "Calibrate chess-sense from a fresh game first.")
+            // analyseAndPublish already pushed the move to the Island, including the
+            // rejected case, so there is nothing left to say here.
+            _ = result
+            return .result()
+        } catch let error as BoardError {
+            // Keep the failure in the Island too, in words a player can act on.
+            await LiveActivityController.update(
+                nil, why: error.userFacingDescription, trusted: false
+            )
+            return .result()
         } catch {
-            return .result(dialog: "Failed: \(error)")
+            await LiveActivityController.update(
+                nil,
+                why: "I couldn't read that board. Screenshot the position again and give it another go.",
+                trusted: false
+            )
+            return .result()
         }
     }
 }

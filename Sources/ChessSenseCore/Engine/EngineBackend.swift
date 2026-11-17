@@ -61,8 +61,33 @@ public protocol EngineBackend: Sendable {
     func evaluate(fen: String, transport: any EngineTransport) async throws -> EngineMove
 }
 
-/// Ordered fallbacks. Lichess's cloud evaluation is instant and keyless but only covers
-/// positions someone has already asked it about (~85% of real games); the public
+/// Where the app registers an engine that only exists inside the app process.
+///
+/// Core cannot reference the Stockfish bridge (it is compiled into the app and the widget
+/// must stay engine-free), so the app hands its local backend over at launch and the chain
+/// prefers it.
+public enum EngineRegistry {
+    private final class Box: @unchecked Sendable {
+        var backend: (any EngineBackend)?
+    }
+
+    private static let box = Box()
+    private static let lock = NSLock()
+
+    public static func registerLocal(_ backend: any EngineBackend) {
+        lock.lock(); defer { lock.unlock() }
+        box.backend = backend
+    }
+
+    public static var localBackend: (any EngineBackend)? {
+        lock.lock(); defer { lock.unlock() }
+        return box.backend
+    }
+}
+
+/// Ordered fallbacks. The on-device engine answers in milliseconds and needs no network, so
+/// it goes first when it is available. Lichess's cloud evaluation is instant and keyless but
+/// only covers positions someone has already asked it about (~85% of real games); the public
 /// Stockfish endpoint fills the rest.
 public struct EngineChain: Sendable {
     public let backends: [any EngineBackend]
@@ -72,7 +97,11 @@ public struct EngineChain: Sendable {
     }
 
     public static var `default`: EngineChain {
-        EngineChain(backends: [LichessCloudBackend(), StockfishOnlineBackend()])
+        var backends: [any EngineBackend] = []
+        if let local = EngineRegistry.localBackend { backends.append(local) }
+        backends.append(LichessCloudBackend())
+        backends.append(StockfishOnlineBackend())
+        return EngineChain(backends: backends)
     }
 
     public func bestMove(

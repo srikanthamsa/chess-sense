@@ -97,6 +97,32 @@ enum SelfTest {
             return fen
         }
 
+        // The regression this pins: `update` used to accept these three and drop them,
+        // leaving the Island with no tip, no piece and White's eval for a Black player.
+        // Asserted on the pure mapping, not on the activity, because ActivityKit delivers
+        // updates asynchronously and `content.state` lags behind by a frame or more.
+        await check("island state carries tip + piece + signed eval") {
+            let state = LiveActivityController.makeState(
+                EngineMove(uci: "g1f3", san: "Nf3", principalVariation: "g1f3",
+                           evalText: "+0.25", provenance: "selftest"),
+                why: "Your knight comes out towards the middle.",
+                trusted: true,
+                playerEval: "-0.25",
+                pieceSymbol: "\u{2658}",
+                tip: "Your knight comes out towards the middle."
+            )
+            guard state.tip == "Your knight comes out towards the middle." else {
+                throw BoardError.verificationFailed(expected: "a tip", got: "empty")
+            }
+            guard state.pieceSymbol == "\u{2658}" else {
+                throw BoardError.verificationFailed(expected: "a piece glyph", got: "empty")
+            }
+            guard state.youEval == "-0.25" else {
+                throw BoardError.verificationFailed(expected: "-0.25", got: state.youEval)
+            }
+            return "tip + \(state.pieceSymbol) + \(state.youEval)"
+        }
+
         var liveActivity = "not attempted"
         do {
             try LiveActivityController.start()
@@ -104,7 +130,10 @@ enum SelfTest {
                 EngineMove(uci: "g1f3", san: "Nf3", principalVariation: "g1f3",
                            evalText: "+0.25", provenance: "selftest"),
                 why: "Your knight comes out towards the middle.",
-                trusted: true
+                trusted: true,
+                playerEval: "-0.25",
+                pieceSymbol: "\u{2658}",
+                tip: "Your knight comes out towards the middle."
             )
             liveActivity = LiveActivityController.isRunning
                 ? "started and updated"

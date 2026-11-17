@@ -29,7 +29,10 @@ struct BestMoveLiveActivity: Widget {
                     IslandExpandedBottom(state: context.state)
                 }
             } compactLeading: {
-                IslandCompactLeading(trusted: context.state.trusted, accent: accent)
+                IslandCompactLeading(move: context.state.displayMove,
+                                     trusted: context.state.trusted,
+                                     accent: accent,
+                                     presentation: IslandPresentation(context.state))
             } compactTrailing: {
                 IslandCompactTrailing(move: context.state.displayMove,
                                       trusted: context.state.trusted,

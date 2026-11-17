@@ -119,7 +119,10 @@ public struct PieceBadge: View {
                 CheckerMark(size: 2.8, gap: 2.2, tint: accent)
             } else {
                 Text(symbol)
-                    .font(.system(size: diameter * 0.82))
+                    // Fill the frame. A chess figure has generous side bearings inside its
+                    // own em-box, so the old 0.82 multiplier drew a 20pt glyph in a 24pt box
+                    // and read as small next to the 30pt move.
+                    .font(.system(size: diameter))
                     .foregroundStyle(accent)
                     .shadow(color: accent.opacity(0.45), radius: 6)
             }
@@ -132,6 +135,8 @@ public struct PieceBadge: View {
 public struct SkeletonBar: View {
     var width: CGFloat = 96
     var height: CGFloat = 24
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     public init(width: CGFloat = 96, height: CGFloat = 24) {
         self.width = width
         self.height = height
@@ -142,8 +147,10 @@ public struct SkeletonBar: View {
             .fill(.white.opacity(0.13))
             .frame(width: width, height: height)
             .phaseAnimator([false, true]) { view, phase in
-                view.opacity(phase ? 0.5 : 1).scaleEffect(phase ? 0.985 : 1, anchor: .leading)
+                view.opacity(reduceMotion ? 1 : (phase ? 0.5 : 1))
+                    .scaleEffect(reduceMotion ? 1 : (phase ? 0.985 : 1), anchor: .leading)
             } animation: { _ in .easeInOut(duration: 1.1) }
+            .accessibilityLabel("Waiting")
     }
 }
 
@@ -160,6 +167,16 @@ public struct AdvantageBar: View {
     }
 
     public var body: some View {
+        if evalText.trimmingCharacters(in: .whitespaces).isEmpty {
+            // An unread board has no advantage to draw. A centred empty bar reads as
+            // "dead equal", which is a claim.
+            EmptyView()
+        } else {
+            bar
+        }
+    }
+
+    private var bar: some View {
         GeometryReader { geo in
             let f = advantageFraction(evalText)
             let half = geo.size.width / 2
@@ -179,7 +196,9 @@ public struct AdvantageBar: View {
             }
         }
         .frame(height: height)
-        .accessibilityLabel("Advantage, \(evalText)")
+        // The pill already announces the advantage in words; a bar cannot be read and would
+        // only repeat that number a second time.
+        .accessibilityHidden(true)
     }
 }
 
@@ -196,8 +215,14 @@ public struct EvalPill: View {
 
     private var colour: Color { accent ?? (trusted ? advantageTint(evalText) : Island.amber) }
 
+    /// Nothing has been evaluated yet, so there is nothing to show. Rendering "0.00" for an
+    /// unread board is a claim, not a placeholder.
+    private var hasEval: Bool { !evalText.trimmingCharacters(in: .whitespaces).isEmpty }
+
     public var body: some View {
-        if !trusted {
+        if !hasEval {
+            EmptyView()
+        } else if !trusted {
             Text("unclear")
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.5))
@@ -207,6 +232,7 @@ public struct EvalPill: View {
             HStack(spacing: 3) {
                 Image(systemName: glyph)
                     .font(.system(size: 8.5, weight: .black))
+                    .accessibilityHidden(true)
                 Text(evalText)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .monospacedDigit()
@@ -217,7 +243,16 @@ public struct EvalPill: View {
             .background(Capsule(style: .continuous).fill(colour.opacity(0.16)))
             .overlay(Capsule(style: .continuous).strokeBorder(colour.opacity(0.18), lineWidth: 0.5))
             .animation(.snappy(duration: 0.45), value: evalText)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityText)
         }
+    }
+
+    /// Colour and the arrow both encode direction, but a screen reader cannot see either.
+    private var accessibilityText: String {
+        let f = advantageFraction(evalText)
+        let stance = f > 0.56 ? "you are better by" : (f < 0.44 ? "you are worse by" : "roughly equal,")
+        return "Advantage: \(stance) \(evalText)"
     }
 
     private var glyph: String {
@@ -230,25 +265,52 @@ public struct EvalPill: View {
 
 // MARK: - Compact and minimal
 
+/// The left half of the compact Island.
+///
+/// This used to be a four-dot checker mark: an app logo doing a label's job. It never
+/// moved, carried no information, and left the one thing the user opened the app for —
+/// the move — unshown. Now it shows the move itself.
 public struct IslandCompactLeading: View {
+    let move: String
     let trusted: Bool
     let accent: Color
-    public init(trusted: Bool, accent: Color = .white) {
+    var presentation: IslandPresentation = .move
+
+    public init(
+        move: String = "",
+        trusted: Bool,
+        accent: Color = .white,
+        presentation: IslandPresentation = .move
+    ) {
+        self.move = move
         self.trusted = trusted
         self.accent = accent
+        self.presentation = presentation
     }
 
     public var body: some View {
         Group {
-            if trusted {
-                CheckerMark(size: 3.4, gap: 2.4, tint: accent.opacity(0.95))
-            } else {
+            if !trusted {
                 Image(systemName: "eye.slash.fill")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(Island.amber)
+                    .accessibilityLabel("Couldn't read the board")
+            } else if presentation == .pending || move.isEmpty {
+                SkeletonBar(width: 22, height: 13)
+            } else {
+                Text(move)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .tracking(-0.3)
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .contentTransition(.numericText())
+                    .animation(.snappy(duration: 0.4), value: move)
+                    .accessibilityLabel(move)
             }
         }
-        .frame(width: 15, height: 15)
+        .frame(minWidth: 22, alignment: .leading)
     }
 }
 
@@ -270,23 +332,29 @@ public struct IslandCompactTrailing: View {
             Image(systemName: "eye.slash.fill")
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(Island.amber)
+        } else if evalText.trimmingCharacters(in: .whitespaces).isEmpty {
+            // Nothing read yet: an empty slot beats a made-up "0.0".
+            EmptyView()
         } else {
             HStack(spacing: 2) {
                 Image(systemName: arrow)
                     .font(.system(size: 7.5, weight: .black))
-                Text(evalText.isEmpty ? "0.0" : evalText)
+                    .accessibilityHidden(true)
+                Text(evalText)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .monospacedDigit()
                     .contentTransition(.numericText())
             }
-            .foregroundStyle(advantageTint(evalText.isEmpty ? "0" : evalText))
+            .foregroundStyle(advantageTint(evalText))
             .lineLimit(1)
             .animation(.snappy(duration: 0.4), value: evalText)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Advantage \(evalText)")
         }
     }
 
     private var arrow: String {
-        let f = advantageFraction(evalText.isEmpty ? "0" : evalText)
+        let f = advantageFraction(evalText)
         if f > 0.56 { return "arrow.up.right" }
         if f < 0.44 { return "arrow.down.right" }
         return "equal"
@@ -339,6 +407,7 @@ public struct IslandMinimal: View {
 public struct IslandExpandedLeading: View {
     let state: BestMoveAttributes.ContentState
     let thinking: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(state: BestMoveAttributes.ContentState, thinking: Bool = false) {
         self.state = state
@@ -349,13 +418,16 @@ public struct IslandExpandedLeading: View {
         if thinking {
             Image(systemName: "sparkle")
                 .font(.system(size: 12, weight: .semibold))
-                .symbolEffect(.variableColor.iterative, options: .repeating)
+                // The repeating symbol effect is decorative motion; honour Reduce Motion.
+                .symbolEffect(.variableColor.iterative,
+                              options: reduceMotion ? .nonRepeating : .repeating)
                 .foregroundStyle(Island.lavender)
                 .frame(width: 18, height: 18)
+                .accessibilityLabel("Reading the board")
         } else {
             PieceBadge(symbol: state.pieceSymbol,
                        accent: IslandAccent.resolve(state),
-                       diameter: 24)
+                       diameter: 26)
         }
     }
 }
@@ -432,7 +504,12 @@ public struct IslandExpandedBottom: View {
 
     private var tipText: String {
         switch presentation {
-        case .rejected: return "Couldn't read the board. Move, then try again."
+        case .rejected:
+            // The caller knows what actually failed (no board found, wrong screenshot,
+            // not calibrated). Use that, in the player's words, when it is there.
+            return state.why.isEmpty
+                ? "Couldn't read the board. Move, then try again."
+                : state.why
         case .pending: return "Reading the board"
         case .move:
             // Only a bounded, source-constrained tip is allowed here. Falling back to the
@@ -476,7 +553,8 @@ public struct LockScreenCard: View {
                 Spacer(minLength: 0)
             }
 
-            if presentation != .rejected {
+            if presentation != .rejected,
+               !state.youEval.trimmingCharacters(in: .whitespaces).isEmpty {
                 AdvantageBar(evalText: state.youEval, height: 5, tint: advantageTint(state.youEval))
             }
 
@@ -489,14 +567,17 @@ public struct LockScreenCard: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Text(presentation == .rejected ? "move again to retry" : state.provenance.lowercased())
-                .font(.system(size: 10, weight: .semibold))
-                .tracking(0.6)
-                .foregroundStyle(.white.opacity(0.3))
-                .lineLimit(1)
+            if presentation == .rejected {
+                Text("move again to retry")
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(0.6)
+                    .foregroundStyle(.white.opacity(0.55))
+                    .lineLimit(1)
+            }
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 16)
+        .accessibilityElement(children: .combine)
     }
 
     private var header: some View {
@@ -509,7 +590,8 @@ public struct LockScreenCard: View {
             Text(presentation == .rejected ? "UNCLEAR" : "BEST MOVE")
                 .font(.system(size: 9.5, weight: .bold))
                 .tracking(0.9)
-                .foregroundStyle(.white.opacity(0.32))
+                // 0.32 measured 2.75:1 on the card fill; 0.62 clears 4.5:1.
+                .foregroundStyle(.white.opacity(0.62))
         }
     }
 }
