@@ -58,6 +58,14 @@ struct ContentView: View {
             }
             .onAppear(perform: refresh)
             .task {
+                // Poll for the extension's first frame a few times, then stop pestering.
+                for _ in 0..<20 {
+                    await continuous.autoEngage()
+                    if continuous.active { break }
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                }
+            }
+            .task {
                 // Commit 3555511 dropped this hook, which left `SelfTest` unreachable and
                 // made every "-chesssense-selftest" run a no-op. Harmless in normal use.
                 guard SelfTest.requested else { return }
@@ -284,45 +292,34 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // A real Button, not a gesture on an HStack. Two gesture variants produced
-            // "taps 0": nothing ran, and there was no way to tell a lost touch from a dead
-            // callback. A bordered button is unambiguous and its style advertises itself.
+            // Two ways in, because they fail differently.
+            //   1. the system picker glyph: Apple's guaranteed path, no app code involved
+            //   2. our own sheet: keeps a trace, so a failure is readable instead of silent
+            HStack(spacing: 12) {
+                BroadcastButton()
+                    .frame(width: 46, height: 46)
+                    .accessibilityIdentifier("system-broadcast-button")
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(continuous.active ? "Broadcasting" : "Start screen broadcast")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Tap the circle to open the system sheet")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+
             Button {
                 continuous.presentBroadcastSheet()
             } label: {
-                HStack(spacing: 14) {
-                    Image(systemName: "dot.radiowaves.left.and.right")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.tint)
-                        .frame(width: 44, height: 44)
-                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Start screen broadcast")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                        Text("Opens the system broadcast sheet")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                }
-                .contentShape(Rectangle())
+                Text("Open the sheet from the app instead")
+                    .font(.footnote.weight(.medium))
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
+            .foregroundStyle(.tint)
             .accessibilityIdentifier("start-broadcast")
-
-            // Apple's own picker, unembellished and NOT wrapped in something else. Taps on
-            // its glyph start the broadcast directly, with no sheet of ours involved; this is
-            // the path Apple guarantees, kept as a fallback beside the traced button.
-            HStack(spacing: 10) {
-                BroadcastButton()
-                    .frame(width: 40, height: 40)
-                Text("System picker fallback")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
 
             Toggle("Watch the screen", isOn: Binding(
                 get: { continuous.active },

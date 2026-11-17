@@ -2,24 +2,27 @@ import ReplayKit
 import SwiftUI
 import UIKit
 
-/// Starts a ReplayKit broadcast.
+/// Apple's own broadcast button.
 ///
-/// `RPSystemBroadcastPickerView` is the documented control, but it renders as a small glyph
-/// that only responds to taps on the glyph itself — which is why tapping the row looked dead
-/// and no sheet appeared. This type keeps the picker for its appearance and presents
-/// `RPBroadcastActivityViewController` directly from a tap anywhere on the row.
+/// This is the control Apple guarantees: tapping its glyph presents the system broadcast
+/// sheet, and no app code sits in the path. It is kept interactive, unlike earlier versions
+/// that disabled it and presented the sheet themselves.
 struct BroadcastButton: UIViewRepresentable {
+    init() {}
+
     func makeUIView(context: Context) -> RPSystemBroadcastPickerView {
-        let picker = RPSystemBroadcastPickerView(
-            frame: CGRect(x: 0, y: 0, width: 54, height: 54)
-        )
+        let picker = RPSystemBroadcastPickerView(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
         picker.preferredExtension = BroadcastInfo.extensionBundleIdentifier
         picker.showsMicrophoneButton = false
-        picker.isUserInteractionEnabled = false   // the row around it handles the tap
+        picker.isUserInteractionEnabled = true
         return picker
     }
 
-    func updateUIView(_ uiView: RPSystemBroadcastPickerView, context: Context) {}
+    func updateUIView(_ uiView: RPSystemBroadcastPickerView, context: Context) {
+        uiView.preferredExtension = BroadcastInfo.extensionBundleIdentifier
+        uiView.showsMicrophoneButton = false
+        uiView.isUserInteractionEnabled = true
+    }
 }
 
 enum BroadcastInfo {

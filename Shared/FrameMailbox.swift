@@ -8,10 +8,19 @@ public struct FrameMailbox {
     public func latest() -> (image: Data, meta: AppGroup.Meta)? {
         guard let metaData = try? Data(contentsOf: AppGroup.metaURL),
               let meta = try? JSONDecoder().decode(AppGroup.Meta.self, from: metaData),
+              meta.broadcasting,
               let image = try? Data(contentsOf: AppGroup.frameURL),
               !image.isEmpty
         else { return nil }
         return (image, meta)
+    }
+
+    /// True when the extension is currently actively broadcasting.
+    public var isBroadcasting: Bool {
+        guard let metaData = try? Data(contentsOf: AppGroup.metaURL),
+              let meta = try? JSONDecoder().decode(AppGroup.Meta.self, from: metaData)
+        else { return false }
+        return meta.broadcasting && (Date().timeIntervalSince1970 - meta.capturedAt < 60)
     }
 
     /// True when the extension has stopped publishing (user stopped the broadcast).
@@ -19,7 +28,8 @@ public struct FrameMailbox {
         guard let metaData = try? Data(contentsOf: AppGroup.metaURL),
               let meta = try? JSONDecoder().decode(AppGroup.Meta.self, from: metaData)
         else { return true }
-        return Date().timeIntervalSince1970 - meta.capturedAt > 6
+        if !meta.broadcasting { return true }
+        return Date().timeIntervalSince1970 - meta.capturedAt > 300
     }
 
     public static func clear() {

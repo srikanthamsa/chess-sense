@@ -13,6 +13,7 @@ import SwiftUI
 @MainActor
 final class ContinuousMode: ObservableObject {
     @Published private(set) var active = false
+    @Published private(set) var isBroadcasting = false
     @Published private(set) var status = "Not running"
     @Published private(set) var analyses = 0
     @Published private(set) var lastMove: String?
@@ -21,6 +22,7 @@ final class ContinuousMode: ObservableObject {
     /// Step-by-step trace of the last attempt, newest last.
     @Published var broadcastLog: [String] = []
     @Published private(set) var taps = 0
+    @Published private(set) var frames = 0
     @Published private(set) var lastAttempt: Date?
     /// What this build actually embeds, shown so a missing extension is obvious.
     var embedded: String { BroadcastInfo.diagnostics }
@@ -31,8 +33,8 @@ final class ContinuousMode: ObservableObject {
     var buildLine: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
-        let last = lastAttempt.map { Self.clock.string(from: $0) } ?? "never"
-        return "build \(version)(\(build)) · taps \(taps) · last \(last)"
+        let live = mailbox.isBroadcasting ? "live" : "idle"
+        return "build \(version)(\(build)) · frames \(frames) · taps \(taps) · \(live)"
     }
 
     private static let clock: DateFormatter = {
@@ -59,21 +61,15 @@ final class ContinuousMode: ObservableObject {
     func presentBroadcastSheet() {
         taps += 1
         lastAttempt = Date()
-        broadcastLog = []
-        broadcastNote = nil
-        BroadcastStarter.onLog = { [weak self] message in
-            guard let self else { return }
-            self.broadcastLog.append(message)
-            if self.broadcastLog.count > 6 { self.broadcastLog.removeFirst() }
-        }
-        BroadcastStarter.onFailure = { [weak self] message in
-            self?.broadcastNote = message
-        }
-        BroadcastStarter.present()
+        start()
     }
 
     func toggle() {
-        active ? stop() : start()
+        if active {
+            stop()
+        } else {
+            presentBroadcastSheet()
+        }
     }
 
     func start() {
@@ -82,9 +78,13 @@ final class ContinuousMode: ObservableObject {
         lastSequence = -1
         lastAnalysedFEN = nil
         analyses = 0
+        isBroadcasting = false
         startKeepAlive()
         active = true
-        status = "Waiting for the broadcast"
+        status = "Waiting for broadcast — tap icon above"
+        if !LiveActivityController.isRunning {
+            _ = try? LiveActivityController.start()
+        }
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.tick() }
@@ -98,26 +98,46 @@ final class ContinuousMode: ObservableObject {
         keepAlive = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         active = false
+        isBroadcasting = false
         status = "Stopped"
         FrameMailbox.clear()
     }
 
     // MARK: - Polling
 
+    /// Engages by itself as soon as the extension starts publishing.
+    ///
+    /// Requiring a toggle after starting a broadcast made a working pipeline look dead: the
+    /// frames were there, nothing consumed them. Watching now begins on its own.
+    func autoEngage() async {
+        guard !active, mailbox.isBroadcasting, mailbox.latest() != nil else { return }
+        start()
+    }
+
     private func tick() async {
         guard active, !inFlight else { return }
 
-        if mailbox.isStale {
-            if lastSequence >= 0 {
-                status = "Broadcast ended"
-                stop()
-            }
+        let broadcastingNow = mailbox.isBroadcasting
+        if isBroadcasting != broadcastingNow {
+            isBroadcasting = broadcastingNow
+        }
+
+        if !broadcastingNow && lastSequence >= 0 {
+            status = "Broadcast ended"
             return
         }
 
-        guard let frame = mailbox.latest() else { return }
+        guard let frame = mailbox.latest() else {
+            if lastSequence < 0 {
+                status = broadcastingNow
+                    ? "Broadcasting · Waiting for board"
+                    : "Waiting for broadcast — tap icon above"
+            }
+            return
+        }
         guard frame.meta.sequence != lastSequence else { return }
         lastSequence = frame.meta.sequence
+        frames += 1
 
         // Wait for the board to stop moving: consecutive frames differ while an animation
         // runs, and analysing those yields rejected reads.
@@ -153,14 +173,19 @@ final class ContinuousMode: ObservableObject {
     /// A one second silent, looping WAV. The audio session is what keeps the process
     /// scheduled; nothing is audible.
     private func startKeepAlive() {
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
-        try? session.setActive(true)
-        guard let url = SilentAudio.writeIfNeeded() else { return }
-        keepAlive = try? AVAudioPlayer(contentsOf: url)
-        keepAlive?.numberOfLoops = -1
-        keepAlive?.volume = 0
-        keepAlive?.play()
+        Task.detached(priority: .utility) {
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try? session.setActive(true)
+            guard let url = SilentAudio.writeIfNeeded() else { return }
+            let player = try? AVAudioPlayer(contentsOf: url)
+            player?.numberOfLoops = -1
+            player?.volume = 0
+            player?.play()
+            await MainActor.run { [weak self] in
+                self?.keepAlive = player
+            }
+        }
     }
 }
 
