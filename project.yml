@@ -41,6 +41,8 @@ targets:
     dependencies:
       - target: ChessSenseWidgets
         embed: true
+      - target: ChessSenseBroadcast
+        embed: true
     settings:
       base:
         CLANG_CXX_LANGUAGE_STANDARD: c++11
@@ -52,6 +54,7 @@ targets:
         HEADER_SEARCH_PATHS:
           - $(SRCROOT)/Vendor/Stockfish
         SWIFT_OBJC_BRIDGING_HEADER: App/ChessSense-Bridging-Header.h
+        CODE_SIGN_ENTITLEMENTS: App/ChessSense.entitlements
         PRODUCT_BUNDLE_IDENTIFIER: ai.chesssense.app
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: App/Info.plist
@@ -68,10 +71,32 @@ targets:
         UIAppFonts:
           - InstrumentSerif-Regular.ttf
           - InstrumentSerif-Italic.ttf
+        UIBackgroundModes:
+          - audio
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         NSSupportsLiveActivities: true
         NSSupportsLiveActivitiesFrequentUpdates: true
+
+  ChessSenseBroadcast:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Broadcast
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.chesssense.app.broadcast
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Broadcast/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Broadcast/ChessSenseBroadcast.entitlements
+        SKIP_INSTALL: YES
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: XKAAC8TL59
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
 
   ChessSenseWidgets:
     type: app-extension

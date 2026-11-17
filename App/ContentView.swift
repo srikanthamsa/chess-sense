@@ -24,6 +24,7 @@ struct ContentView: View {
     @State private var lastEval: String?
     @State private var lastWhy: String?
 
+    @StateObject private var continuous = ContinuousMode()
     @State private var keyDraft = ""
     @State private var keySaved = false
 
@@ -36,6 +37,7 @@ struct ContentView: View {
                     coachingCard
                     trackingCard
                     analyseCard
+                    continuousCard
                     if !detail.isEmpty { detailCard }
                 }
                 .padding(.horizontal, 16)
@@ -269,6 +271,57 @@ struct ContentView: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
+        }
+    }
+
+    /// Continuous mode: the extension streams frames, the app reads them and owns the Island.
+    private var continuousCard: some View {
+        panel("Continuous mode", systemImage: "dot.radiowaves.left.and.right") {
+            Text("Start the broadcast once and the island keeps up on its own. "
+                 + "Nothing is recorded; frames are read, analysed and discarded.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 14) {
+                BroadcastButton()
+                    .frame(width: 44, height: 44)
+                    .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 11, style: .continuous)
+                            .strokeBorder(.secondary.opacity(0.25))
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Start screen broadcast")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Then turn watching on below")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+
+            Toggle("Watch the screen", isOn: Binding(
+                get: { continuous.active },
+                set: { _ in continuous.toggle() }
+            ))
+            .tint(.accentColor)
+
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(continuous.active ? Color.green : Color.secondary.opacity(0.4))
+                    .frame(width: 8, height: 8)
+                Text(continuous.status)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if continuous.analyses > 0 {
+                    Text("\(continuous.analyses) analysed")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 

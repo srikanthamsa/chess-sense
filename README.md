@@ -316,3 +316,20 @@ list must contain the Apple ID, and `xcodebuild` reports `No Accounts` when it d
   also why chessvision.ai exposes `--orientation` / `--castling` / `--turn` overrides.
 - `chessvision` on PyPI is a different, unrelated project (GPL-3.0) that happens to share
   the name.
+
+## Continuous mode
+
+Press the broadcast button once in the app, then flip **Watch the screen** on. The ReplayKit
+upload extension publishes about four frames a second into the shared App Group container; the
+app polls that mailbox, waits for the board to settle, reads it, asks the on-device engine and
+updates the island. Frames are read and discarded, never stored.
+
+Three things this design accepts, because Apple's platform requires them:
+
+- **The app must stay alive.** ReplayKit extensions cannot use ActivityKit, so the island
+  belongs to the app. A silent audio session keeps the process scheduled, which is the same
+  mechanism a music player uses; it is a keep-alive, not a supported background camera.
+- **~4 frames per second, not 60.** A board changes a few times a minute; decimating keeps the
+  extension inside its memory budget and the battery intact.
+- **An App Group is the only channel** between the two processes, so it is required.
+
