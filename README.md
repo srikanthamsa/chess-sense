@@ -288,8 +288,20 @@ INFO  live activity: started and updated
 That covers the reader, the rules, the network engine and ActivityKit inside the shipping
 binary. `docs/simulator-selftest.png` is the screen it produces.
 
-Still unverified: the Dynamic Island's rendered appearance and the Action Button/Back Tap
-trigger, which need a physical iPhone. A signed build also needs an **Xcode developer
+**Confirmed working on the device**: screenshot → live engine → SAN in the Dynamic Island,
+triggered from a Shortcut. Getting there took three real-game failures, each now a fixture
+and a test:
+
+| Symptom | Cause |
+|---|---|
+| `no template matched e7` (59) | locator clipped the outer ranks: 1174 px rect for a 1206 px board |
+| `no template matched e7` (59) | highlight on a **dark** square moves 91 RGB units; the rule allowed 60 |
+| `no template matched f6` (59) | an oversized knight owned the square's border ring, so the piece became the background |
+
+All three were the same underlying question — *what colour is this square?* — answered three
+different ways. It is now answered by candidates (ring + four corners), filtered by "could
+this be a piece fill", picked by distance to the palette. A glyph is centred, so a corner is
+always pure square. A signed build also needs an **Xcode developer
 account** — being signed in to the system Apple Account is not sufficient; Xcode's account
 list must contain the Apple ID, and `xcodebuild` reports `No Accounts` when it doesn't.
 
