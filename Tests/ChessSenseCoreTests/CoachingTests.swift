@@ -188,3 +188,24 @@ final class IslandTipTests: XCTestCase {
         XCTAssertFalse(text.contains("+"), text)
     }
 }
+
+final class TipClampingTests: XCTestCase {
+    func testCompleteSentenceWins() {
+        let raw = "Your queen moves left. It puts his king in check, so he must"
+        XCTAssertEqual(MoveExplainer.clamped(raw), "Your queen moves left.")
+    }
+
+    func testWordBoundaryWhenNoSentenceFits() {
+        let clamped = MoveExplainer.clamped(
+            "Your rook slides all the way across the back row to join its partner"
+        )
+        XCTAssertLessThanOrEqual(clamped.count, MoveExplainer.islandTipLimit)
+        XCTAssertFalse(clamped.hasSuffix(" "), clamped)
+        XCTAssertFalse(clamped.contains("…"), clamped)
+    }
+
+    func testShortCopyIsUntouched() {
+        XCTAssertEqual(MoveExplainer.clamped("Your pawn takes the centre."),
+                       "Your pawn takes the centre.")
+    }
+}

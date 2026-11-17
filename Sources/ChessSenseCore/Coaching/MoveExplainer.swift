@@ -107,22 +107,36 @@ public enum MoveExplainer {
     }
 
     /// Hard guarantee, independent of the wording above or of a model's output: never longer
-    /// than the limit and never containing an ellipsis.
+    /// than the limit, never containing an ellipsis, and never ending mid-thought.
+    ///
+    /// Cutting at a bare word boundary produced "Your queen moves left. It puts his king in
+    /// check, so he must" — 60 characters of unfinished sentence. A sentence boundary inside
+    /// the limit is preferred, so the result reads as a complete thought.
     public static func clamped(_ text: String) -> String {
         var trimmed = text.replacingOccurrences(of: "…", with: "")
-            .replacingOccurrences(of: "...", with: "")
+            .replacingOccurrences(of: "...", with: ".")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        while trimmed.count > islandTipLimit {
-            guard let space = trimmed.lastIndex(of: " ") else {
-                trimmed = String(trimmed.prefix(islandTipLimit))
-                break
-            }
-            trimmed = String(trimmed[..<space])
+        // Even when it already fits, a two-sentence answer leaves the Island mid-thought.
+        if let period = trimmed.firstIndex(of: "."),
+           period != trimmed.index(before: trimmed.endIndex) {
+            let firstSentence = String(trimmed[...period])
+            if firstSentence.count <= islandTipLimit { return firstSentence }
         }
-        // Tidy a dangling comma or dash left by the cut.
-        while let last = trimmed.last, ",;:—- ".contains(last) {
-            trimmed.removeLast()
+        guard trimmed.count > islandTipLimit else { return trimmed }
+
+        let head = String(trimmed.prefix(islandTipLimit))
+
+        // 1. Prefer a complete sentence that fits.
+        if let period = head.lastIndex(of: "."), head[..<period].count >= 12 {
+            return String(head[...period])
         }
+        // 2. Otherwise end on a word boundary.
+        if let space = head.lastIndex(of: " ") {
+            trimmed = String(head[..<space])
+        } else {
+            trimmed = head
+        }
+        while let last = trimmed.last, ",;:—- ".contains(last) { trimmed.removeLast() }
         return trimmed
     }
 

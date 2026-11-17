@@ -402,6 +402,14 @@ public struct IslandExpandedBottom: View {
     /// model side (a 55-character instruction plus a validated clamp), so this view never has
     /// to truncate and never has to shrink the type below the system minimum.
     public var body: some View {
+        if tipText.isEmpty {
+            EmptyView()
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
         HStack(alignment: .top, spacing: 8) {
             Capsule()
                 .fill(accent)
@@ -427,9 +435,9 @@ public struct IslandExpandedBottom: View {
         case .rejected: return "Couldn't read the board. Move, then try again."
         case .pending: return "Reading the board"
         case .move:
-            if !state.tip.isEmpty { return state.tip }
-            if !state.why.isEmpty { return MoveExplainer.clamped(state.why) }
-            return state.provenance
+            // Only a bounded, source-constrained tip is allowed here. Falling back to the
+            // long explanation is what produced unfinished sentences in the Island.
+            return state.tip
         }
     }
 }

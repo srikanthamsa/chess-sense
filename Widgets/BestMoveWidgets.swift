@@ -12,7 +12,10 @@ struct BestMoveLiveActivity: Widget {
             let accent = IslandAccent.resolve(context.state)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
+                    // The trailing/leading content sits close to the corner curve; a small
+                    // inset keeps the eval badge from being clipped by it.
                     IslandExpandedLeading(state: context.state)
+                        .padding(.leading, 2)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     IslandExpandedMove(state: context.state)
@@ -20,6 +23,7 @@ struct BestMoveLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     EvalPill(evalText: context.state.youEval,
                              trusted: context.state.trusted)
+                        .padding(.trailing, 6)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     IslandExpandedBottom(state: context.state)
