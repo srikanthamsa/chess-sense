@@ -23,6 +23,7 @@ enum LiveActivityController {
         guard activitiesEnabled, !isRunning else { return isRunning }
         let state = BestMoveAttributes.ContentState(
             uci: "----",
+            san: "",
             evalText: "---",
             principalVariation: "",
             provenance: "waiting for a screenshot",
@@ -49,6 +50,7 @@ enum LiveActivityController {
         if let move, trusted {
             state = .init(
                 uci: move.uci,
+                san: move.san ?? "",
                 evalText: move.evalText,
                 principalVariation: move.principalVariation,
                 provenance: move.provenance,
@@ -57,6 +59,7 @@ enum LiveActivityController {
         } else {
             state = .init(
                 uci: "--",
+                san: "",
                 evalText: "!",
                 principalVariation: "board read was not confident",
                 provenance: "rejected",

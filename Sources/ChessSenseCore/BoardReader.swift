@@ -2,6 +2,9 @@ import Foundation
 
 public struct BoardRead: Sendable {
     public let fen: String
+    /// The 64 recognised squares in FEN order. This is what `PositionTracker` consumes —
+    /// the rules engine never parses FEN text to get the board.
+    public let pieces: [Piece]
     public let rect: BoardRect
     /// Fraction of squares matched at shape distance 0.
     public let exactRate: Double
@@ -53,6 +56,7 @@ public enum BoardReader {
 
         return BoardRead(
             fen: FEN.encode(pieces),
+            pieces: pieces,
             rect: board,
             exactRate: Double(exact) / 64.0,
             worstShapeDistance: worst,

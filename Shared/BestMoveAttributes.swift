@@ -9,6 +9,8 @@ public struct BestMoveAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         /// UCI move, e.g. "e2e4".
         public var uci: String
+        /// Standard algebraic notation, e.g. "Nf3". Preferred for display.
+        public var san: String
         /// Human-readable evaluation, e.g. "+0.34" or "#3".
         public var evalText: String
         /// Principal variation, space separated UCI moves.
@@ -20,12 +22,14 @@ public struct BestMoveAttributes: ActivityAttributes {
 
         public init(
             uci: String,
+            san: String,
             evalText: String,
             principalVariation: String,
             provenance: String,
             trusted: Bool
         ) {
             self.uci = uci
+            self.san = san
             self.evalText = evalText
             self.principalVariation = principalVariation
             self.provenance = provenance
@@ -33,6 +37,7 @@ public struct BestMoveAttributes: ActivityAttributes {
         }
 
         public var displayMove: String {
+            if !san.isEmpty { return san }
             guard uci.count >= 4 else { return uci }
             let from = uci.prefix(2)
             let to = uci.dropFirst(2).prefix(2)

@@ -17,10 +17,12 @@ screenshot ──▶ locate board ──▶ classify 64 squares ──▶ FEN �
 | Board locator | works on TakeTakeTake screenshots |
 | Square classifier | reads the starting position exactly, 13/13 templates learned from one frame |
 | Template calibration | self-verifying; rejects frames that disagree with the expected position |
-| Clean-room engine + tests | 13 tests green |
+| Chess rules module (move gen, legality, castling, ep, promotion) | done, anchored by perft |
+| Move diffing + castling / en passant / turn tracking | done, 9 tracker tests |
+| SAN generation | done, 10 notation tests |
+| Engine: Lichess cloud eval + Stockfish fallback + cache | done, payload-captured tests |
 | iOS app, Live Activity, App Intent | scaffolded, compiles in Xcode |
-| Engine client (Lichess cloud eval) | done, not yet exercised on device |
-| Move diffing / castling / en passant | not started |
+| 43 unit tests | green |
 
 ## Quick start
 
@@ -46,10 +48,8 @@ open ChessSense.xcodeproj
 4. In **Shortcuts**, build: `Take Screenshot` → `Best Move` (the app's intent).
    Bind it to the Action Button or Back Tap. Screenshot mid-game, the move appears.
 
-The Dynamic Island shows the move as `from–to` (`e2–e4`) rather than SAN. That is
-deliberate for v1: SAN needs full legal-move generation for disambiguation, check and mate
-marks, and a wrong `Nf3` vs `Ngf3` is a worse bug than an unambiguous `b1–c3`. ChessKit for
-proper SAN is a one-file change once the pipeline is proven on device.
+The Dynamic Island shows **SAN** (`Nf3`, `Qxd5+`, `O-O`), falling back to `from–to` if the
+engine's move somehow isn't legal in the tracked position.
 
 ## How it works
 
@@ -137,6 +137,58 @@ model has to earn with a dataset, and skips the detector entirely.
 The discipline worth copying is the reject path: never emit a move from a low-confidence
 read.
 
+## Rules, tracking and notation
+
+### The rules module
+
+Finding the best move is worthless if the FEN is wrong, so the core owns a complete chess
+rules implementation: move generation, legality (pins and checks), castling, en passant,
+promotion, castling-right bookkeeping, FEN round-trip and SAN.
+
+It is anchored to published **perft** counts, which is the cheapest honest proof a move
+generator is correct:
+
+| Position | Depth 1 | 2 | 3 |
+|---|---|---|---|
+| start | 20 | 400 | 8,902 |
+| Kiwipete `r3k2r/p1ppqpb1/...` | 48 | 2,039 | — |
+| P3 `8/2p5/3p4/KP5r/...` | 14 | 191 | 2,812 |
+
+**Why not ChessKit:** SAN needs full legal-move generation for disambiguation, check and
+mate — the same machinery move diffing needs. A package dependency can't resolve in this
+project's Xcode targets here either (SwiftPM's manifest cache is outside the writable
+sandbox), so one self-contained module that serves both jobs beats a dependency that
+serves one.
+
+### Tracking is how a FEN gets its other five fields
+
+A screenshot is 64 piece placements. A FEN needs six fields. The other five come from
+**history**, which is strictly more reliable than inferring them from pixels:
+
+```
+observed 64 squares ──▶ find the legal move(s) that reach them
+                        ├─ exactly one 1-ply move      → apply, advance turn
+                        ├─ exactly one 2-ply sequence  → a frame was missed; apply both
+                        └─ nothing explains it         → resync: adopt the board,
+                                                         rebuild castling from piece
+                                                         placement, drop ep
+```
+
+Every special case falls out of move generation instead of being special-cased by hand:
+castling arrives as one ply because the rook leg is in the diff, en passant because the
+captured pawn is not on the destination square, promotion because a pawn disappears and a
+queen appears. `Side to move` is never read from pixels at all.
+
+### Engine
+
+`EngineChain` tries backends in order and reports every reason if all fail:
+
+1. **Lichess cloud eval** — keyless, instant, depth 30–75 for positions someone has already
+   analysed. ~85% of real games.
+2. **stockfish.online** — covers the rest.
+
+Responses are cached per FEN, so recognising the same frame twice costs nothing.
+
 ## Layout
 
 ```
@@ -146,10 +198,15 @@ Sources/ChessSenseCore/
   BoardPalette.swift    checkerboard palette, per-square background
   SquareSignature.swift shape bits + bright fraction
   TemplateBook.swift    calibration, clustering, two-stage classify
-  BoardReader.swift     image -> FEN, self-verifying calibration
+  BoardReader.swift     image -> 64 squares -> FEN, self-verifying calibration
   Piece.swift           pieces, errors
+  Chess/                squares, moves, position, move generation, SAN, tracker
+  Engine/               backends, fallback chain, cache
+App/                    pipeline, Live Activity, App Intent, calibration UI
+Widgets/                Dynamic Island / lock-screen activity
+Shared/                 activity attributes (compiled into app + extension)
 Sources/chesssense-diag/  CLI diagnostics: rect, palette, per-square stats, FEN
-Tests/ChessSenseCoreTests/
+Tests/ChessSenseCoreTests/  reader, rules, tracker, engine
 ```
 
 ## Roadmap
@@ -158,17 +215,18 @@ Tests/ChessSenseCoreTests/
 - [x] Live Activity / Dynamic Island rendering of the best move
 - [x] App Intent so the Action Button (or a Shortcut) triggers a background analyze
 - [x] Engine: Lichess cloud eval (no key)
-- [ ] Fallback engine for positions not in Lichess's cache (~15% of middlegame)
-- [ ] Proper SAN via ChessKit
-- [ ] Move diffing + castling/en-passant tracking so only the FEN's board part comes from pixels
+- [x] Fallback engine: stockfish.online
+- [x] SAN via an in-house rules module, anchored by perft
+- [x] Move diffing + castling / en-passant / turn tracking
+- [ ] On-device fallback engine (Stockfish binary) for fully offline operation
 - [ ] Optional: raw ReplayKit frames for continuous updates
 - [ ] Optional: DeepSeek for a one-line "why" in the expanded Island view
 
 ## Verification status
 
-Green and repeatable: `swift test` (13 tests) and an iOS-17-simulator typecheck of the
-core plus every non-SwiftUI app file (`EngineClient`, `CalibrationStore`,
-`LiveActivityController`, `AnalysisPipeline`).
+Green and repeatable: `swift test` (43 tests — reader, perft-anchored rules, tracker,
+engine payloads) and an iOS-17-simulator typecheck of the core plus every non-SwiftUI app
+file (`CalibrationStore`, `LiveActivityController`, `AnalysisPipeline`).
 
 Not yet verified: the SwiftUI surface (`ContentView`, the app entry point, the App Intent,
 the widget). Those expand macros through `swift-plugin-server`, which cannot start in a
@@ -178,6 +236,10 @@ execution and the real end-to-end latency are still unmeasured.
 
 ## Notes
 
+- If a frame can't be explained by legal play the tracker resyncs rather than guessing. A
+  board that turns out to be the starting position is treated as a fresh game (White to
+  move, all castling rights); any other resync keeps the previous turn, and the result is
+  reported as an assumption rather than a certainty.
 - Side to move, castling rights and en-passant are *not* read from pixels. A single frame
   cannot contain them; tracking them from move history is strictly more reliable, which is
   also why chessvision.ai exposes `--orientation` / `--castling` / `--turn` overrides.

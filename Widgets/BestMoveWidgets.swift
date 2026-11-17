@@ -34,8 +34,8 @@ struct BestMoveLiveActivity: Widget {
                     Text(context.state.displayMove)
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .monospacedDigit()
-                    Text(context.state.trusted
-                         ? context.state.principalVariation
+                    Text(context.state.principalVariation.isEmpty
+                         ? context.state.provenance
                          : context.state.principalVariation)
                         .font(.caption)
                         .foregroundStyle(.secondary)

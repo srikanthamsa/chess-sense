@@ -13,9 +13,8 @@ mkdir -p .build/tmp .build/mc
 TMPDIR="$PWD/.build/tmp" xcrun -sdk iphonesimulator swiftc -typecheck \
   -target arm64-apple-ios17.0-simulator \
   -module-cache-path .build/mc \
-  Sources/ChessSenseCore/*.swift \
+  $(find Sources/ChessSenseCore -name '*.swift') \
   Shared/BestMoveAttributes.swift \
-  App/EngineClient.swift \
   App/CalibrationStore.swift \
   App/LiveActivityController.swift \
   App/AnalysisPipeline.swift

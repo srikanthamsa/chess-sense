@@ -6,26 +6,32 @@ struct ContentView: View {
 
     @State private var pickerItem: PhotosPickerItem?
     @State private var busy = false
-    @State private var status: String = ""
-    @State private var details: String = ""
+    @State private var headline = ""
+    @State private var detail = ""
     @State private var tracking = false
+    @State private var calibrationDate: Date?
+    @State private var trackedFEN: String?
 
     var body: some View {
         NavigationStack {
             List {
                 Section("1 · Calibrate") {
-                    Text("Screenshot a **fresh game** (starting position) in TakeTakeTake, then pick it here. One frame teaches all 13 templates.")
+                    Text("Screenshot a **fresh game** (starting position) in TakeTakeTake and pick it here. One frame teaches all 13 templates, and the app verifies the read before accepting it.")
                         .font(.footnote)
                     PhotosPicker(selection: $pickerItem, matching: .images) {
                         Label("Pick starting-position screenshot", systemImage: "square.grid.3x3")
                     }
-                    if let date = store.calibrationDate {
-                        LabeledContent("Calibrated", value: date.formatted(date: .abbreviated, time: .shortened))
+                    if let calibrationDate {
+                        LabeledContent("Calibrated",
+                                       value: calibrationDate.formatted(date: .abbreviated,
+                                                                        time: .shortened))
                     }
                     Button("Reset calibration", role: .destructive) {
                         store.reset()
-                        status = "Calibration cleared."
-                        details = ""
+                        calibrationDate = nil
+                        trackedFEN = nil
+                        headline = "Calibration cleared."
+                        detail = ""
                     }
                 }
 
@@ -33,39 +39,53 @@ struct ContentView: View {
                     Button {
                         tracking.toggle()
                         if tracking {
-                            do { try LiveActivityController.start() } catch { status = "\(error)" }
+                            do { try LiveActivityController.start() } catch { headline = "\(error)" }
                         } else {
                             Task { await LiveActivityController.end() }
                         }
                     } label: {
-                        Label(
-                            tracking ? "Stop Live Activity" : "Start Live Activity",
-                            systemImage: tracking ? "stop.circle" : "play.circle"
-                        )
+                        Label(tracking ? "Stop Live Activity" : "Start Live Activity",
+                              systemImage: tracking ? "stop.circle" : "play.circle")
                     }
-                    Text("With it running, the Island shows the move after each analyse.")
+                    Text("The Island shows the move after each analysis. Wire it hands-free with **One Screenshot → Best Move** — see the README.")
                         .font(.footnote)
+                    if let trackedFEN {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Tracked position").font(.caption).foregroundStyle(.secondary)
+                            Text(trackedFEN).font(.caption2.monospaced()).textSelection(.enabled)
+                        }
+                    }
+                    Button("Forget move history", role: .destructive) {
+                        store.resetTracking()
+                        trackedFEN = nil
+                        headline = "Move history cleared."
+                        detail = ""
+                    }
                 }
 
                 Section("3 · Analyse a position") {
                     PhotosPicker(selection: $pickerItem, matching: .images) {
                         Label("Pick current-position screenshot", systemImage: "photo")
                     }
-                    Text("For hands-free: bind **Best Move** to the Action Button in Shortcuts (Take Screenshot → Best Move).")
-                        .font(.footnote)
                 }
 
-                if !status.isEmpty {
+                if !headline.isEmpty {
                     Section("Result") {
-                        Text(status).font(.body.monospaced())
-                        if !details.isEmpty {
-                            Text(details).font(.caption.monospaced()).foregroundStyle(.secondary)
+                        Text(headline).font(.title3.monospaced().weight(.semibold))
+                        if !detail.isEmpty {
+                            Text(detail).font(.caption.monospaced())
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
                         }
                     }
                 }
             }
             .navigationTitle("chess-sense")
             .overlay { if busy { ProgressView() } }
+            .onAppear {
+                calibrationDate = store.calibrationDate
+                trackedFEN = store.trackedFEN
+            }
             .onChange(of: pickerItem) { _, item in
                 guard let item else { return }
                 Task { await handle(item) }
@@ -78,25 +98,48 @@ struct ContentView: View {
         defer { busy = false; pickerItem = nil }
         do {
             guard let data = try await item.loadTransferable(type: Data.self) else {
-                status = "Could not load that image."
+                headline = "Could not load that image."
                 return
             }
-            if store.isCalibrated {
-                let result = try await AnalysisPipeline.analyzeAndPublish(imageData: data)
-                status = result.move.map { "\($0.uci)   \($0.evalText)" } ?? "no move"
-                details = [
-                    result.fen,
-                    result.failure.map { "note: \($0)" },
-                    result.move?.principalVariation,
-                ].compactMap { $0 }.joined(separator: "\n")
-            } else {
+
+            if !store.isCalibrated {
                 let read = try AnalysisPipeline.calibrate(imageData: data)
-                status = "Calibrated ✓"
-                details = read.fen + "\nworst shape distance \(read.worstShapeDistance)"
+                calibrationDate = store.calibrationDate
+                trackedFEN = store.trackedFEN
+                headline = "Calibrated ✓"
+                detail = "\(read.fen)\nworst shape distance \(read.worstShapeDistance), "
+                    + "colour margin \(String(format: "%.2f", read.minColorMargin))"
+                return
             }
+
+            let outcome = try await AnalysisPipeline.analyzeAndPublish(imageData: data)
+            trackedFEN = store.trackedFEN
+
+            if let move = outcome.move {
+                headline = "\(move.displayMove)    \(move.evalText)"
+            } else if !outcome.trusted {
+                headline = "Read rejected"
+            } else {
+                headline = "No move"
+            }
+
+            detail = [
+                outcome.trackingNote,
+                outcome.move.map { "pv: \($0.principalVariation)" },
+                outcome.move.map { "via \($0.provenance)" },
+                outcome.failure.map { "note: \($0)" },
+                "\(outcome.fen)",
+            ]
+            .compactMap { $0 }
+            .filter { !$0.isEmpty }
+            .joined(separator: "\n")
         } catch {
-            status = "Failed"
-            details = "\(error)"
+            headline = "Failed"
+            detail = "\(error)"
         }
     }
+}
+
+#Preview {
+    ContentView()
 }

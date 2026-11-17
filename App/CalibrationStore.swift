@@ -10,6 +10,7 @@ struct CalibrationStore {
         static let book = "chesssense.templateBook.v1"
         static let rect = "chesssense.boardRect.v1"
         static let calibratedAt = "chesssense.calibratedAt.v1"
+        static let trackedFEN = "chesssense.trackedFEN.v1"
     }
 
     private let defaults: UserDefaults
@@ -38,12 +39,30 @@ struct CalibrationStore {
         return try? JSONDecoder().decode(TemplateBook.self, from: data)
     }
 
+    /// Position after the last analysed frame. This is what makes side-to-move,
+    /// castling rights and en passant survive between App Intent runs.
+    var trackedFEN: String? {
+        get { defaults.string(forKey: Keys.trackedFEN) }
+        nonmutating set {
+            if let newValue {
+                defaults.set(newValue, forKey: Keys.trackedFEN)
+            } else {
+                defaults.removeObject(forKey: Keys.trackedFEN)
+            }
+        }
+    }
+
+    func resetTracking() {
+        defaults.removeObject(forKey: Keys.trackedFEN)
+    }
+
     func loadRect() -> BoardRect? {
         guard let data = defaults.data(forKey: Keys.rect) else { return nil }
         return try? JSONDecoder().decode(BoardRect.self, from: data)
     }
 
     func reset() {
+        resetTracking()
         defaults.removeObject(forKey: Keys.book)
         defaults.removeObject(forKey: Keys.rect)
         defaults.removeObject(forKey: Keys.calibratedAt)
