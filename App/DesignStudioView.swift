@@ -78,15 +78,12 @@ struct DesignStudioView: View {
                     expanded
                 }
 
-                caption("Lock screen · over a photo")
-                ZStack {
-                    wallpaper
-                    VStack(spacing: 18) {
-                        LockScreenCard(state: sample.state)
-                            .padding(14)
-                    }
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+                caption("Lock screen")
+                LockScreenCard(state: sample.state)
+                    .background(
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .fill(Color(white: 0.09))
+                    )
             }
                 .padding(20)
             }
@@ -94,25 +91,6 @@ struct DesignStudioView: View {
         .environment(\.colorScheme, .dark)
         .navigationTitle("Island studio")
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    /// A warm, bright backdrop so the glass has something to refract, as in the reference.
-    private var wallpaper: some View {
-        LinearGradient(
-            colors: [
-                Color(red: 0.93, green: 0.82, blue: 0.66),
-                Color(red: 0.74, green: 0.60, blue: 0.46),
-                Color(red: 0.28, green: 0.24, blue: 0.22),
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        .overlay(
-            Circle()
-                .fill(.white.opacity(0.35))
-                .blur(radius: 60)
-                .offset(x: 90, y: -140)
-        )
     }
 
     private func caption(_ text: String) -> some View {
@@ -185,10 +163,10 @@ struct DesignStudioView: View {
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 38, style: .continuous)
+            RoundedRectangle(cornerRadius: 42, style: .continuous)
                 .fill(.black)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 38, style: .continuous)
+                    RoundedRectangle(cornerRadius: 42, style: .continuous)
                         .strokeBorder(.white.opacity(0.07))
                 )
         )
