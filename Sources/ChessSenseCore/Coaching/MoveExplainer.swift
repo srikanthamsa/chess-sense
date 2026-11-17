@@ -54,6 +54,78 @@ public enum MoveExplainer {
         return sentences.prefix(2).joined(separator: " ")
     }
 
+    // MARK: - Island tip
+
+    /// One sentence, one idea, guaranteed to fit two lines in the Dynamic Island.
+    ///
+    /// The Island has no room for a paragraph and must never end in an ellipsis, so the copy
+    /// is constrained *here*, at the source, rather than clipped in the view. The full
+    /// explanation stays in the app and on the lock screen.
+    public static let islandTipLimit = 60
+
+    public static func islandTip(
+        move: Move,
+        in position: ChessPosition,
+        evalText: String?
+    ) -> String {
+        let mover = position.board[move.from]
+        var kind: PieceKind = .pawn
+        var color: PieceColor = .white
+        if case let .piece(k, c) = mover { kind = k; color = c }
+
+        let after = position.applying(move)
+        let isMate = after.isInCheck && MoveGenerator.legalMoves(in: after).isEmpty
+        let isCheck = after.isInCheck
+        let captured = capturedPiece(for: move, in: position)
+        var capturedKind: PieceKind?
+        if case let .piece(k, _) = captured ?? .empty { capturedKind = k }
+
+        // Ordered by how much the fact changes the player's understanding.
+        let candidate: String
+        if isMate {
+            candidate = "Checkmate — his king has nowhere to run."
+        } else if let promo = move.promotion {
+            candidate = "Your pawn promotes to a \(pieceName(promo))."
+        } else if move.isCastle {
+            candidate = "You castle, tucking the king away and waking a rook."
+        } else if let taken = capturedKind, isCheck {
+            candidate = "Your \(pieceName(kind)) takes the \(pieceName(taken)) with check."
+        } else if let taken = capturedKind {
+            candidate = "Your \(pieceName(kind)) takes the \(pieceName(taken))."
+        } else if isCheck {
+            candidate = "Your \(pieceName(kind)) lands with check."
+        } else if [27, 28, 35, 36].contains(move.to) {
+            candidate = "Your \(pieceName(kind)) takes the centre."
+        } else if kind != .pawn, move.to / 8 >= 2, move.to / 8 <= 5 {
+            candidate = "Your \(pieceName(kind)) joins the play in the middle."
+        } else if kind == .pawn {
+            candidate = "Your pawn gains space and opens a lane."
+        } else {
+            candidate = "Your \(pieceName(kind)) moves to a better square."
+        }
+        return clamped(candidate)
+    }
+
+    /// Hard guarantee, independent of the wording above or of a model's output: never longer
+    /// than the limit and never containing an ellipsis.
+    public static func clamped(_ text: String) -> String {
+        var trimmed = text.replacingOccurrences(of: "…", with: "")
+            .replacingOccurrences(of: "...", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        while trimmed.count > islandTipLimit {
+            guard let space = trimmed.lastIndex(of: " ") else {
+                trimmed = String(trimmed.prefix(islandTipLimit))
+                break
+            }
+            trimmed = String(trimmed[..<space])
+        }
+        // Tidy a dangling comma or dash left by the cut.
+        while let last = trimmed.last, ",;:—- ".contains(last) {
+            trimmed.removeLast()
+        }
+        return trimmed
+    }
+
     // MARK: - Facts
 
     static func capturedPiece(for move: Move, in position: ChessPosition) -> Piece? {

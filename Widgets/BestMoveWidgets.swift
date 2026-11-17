@@ -29,11 +29,13 @@ struct BestMoveLiveActivity: Widget {
             } compactTrailing: {
                 IslandCompactTrailing(move: context.state.displayMove,
                                       trusted: context.state.trusted,
-                                      accent: accent)
+                                      accent: accent,
+                                      evalText: context.state.youEval)
             } minimal: {
                 IslandMinimal(move: context.state.displayMove,
-                              presentation: IslandPresentation(context.state))
-                    .foregroundStyle(accent)
+                              presentation: IslandPresentation(context.state),
+                              symbol: context.state.pieceSymbol,
+                              accent: accent)
             }
             .keylineTint(accent)
         }

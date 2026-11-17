@@ -39,7 +39,7 @@ struct DesignStudioView: View {
                              provenance: "lichess cloud · d31",
                              trusted: true,
                              why: "Your queen slides onto the open diagonal and takes that pawn, so you are simply a piece up here.",
-                             playerEval: "+2.32", pieceSymbol: "\u{265B}")
+                             playerEval: "+2.32", pieceSymbol: "\u{265B}", tip: "Your queen takes the bishop and hits the king.")
             case .unclear:
                 return .init(uci: "--", san: "", evalText: "!",
                              principalVariation: "board read was not confident",
@@ -49,7 +49,7 @@ struct DesignStudioView: View {
                              principalVariation: "Ra8#",
                              provenance: "stockfish.online · d14", trusted: true,
                              why: "Your rook drops onto the back row. His king has nowhere to go — that is checkmate.",
-                             playerEval: "#1", pieceSymbol: "\u{2656}")
+                             playerEval: "#1", pieceSymbol: "\u{2656}", tip: "Checkmate — his king has nowhere to run.")
             }
         }
     }
@@ -108,7 +108,8 @@ struct DesignStudioView: View {
                                      accent: IslandAccent.resolve(sample.state))
                 IslandCompactTrailing(move: sample.state.displayMove,
                                       trusted: sample.state.trusted,
-                                      accent: IslandAccent.resolve(sample.state))
+                                      accent: IslandAccent.resolve(sample.state),
+                                      evalText: sample.state.youEval)
             }
             .padding(.horizontal, 14)
             .frame(height: 37)
@@ -116,7 +117,7 @@ struct DesignStudioView: View {
             .overlay(Capsule().strokeBorder(.white.opacity(0.06)))
 
             HStack {
-                IslandMinimal(move: sample.state.displayMove, presentation: IslandPresentation(sample.state))
+                IslandMinimal(move: sample.state.displayMove, presentation: IslandPresentation(sample.state), symbol: sample.state.pieceSymbol, accent: IslandAccent.resolve(sample.state))
                     .foregroundStyle(.white)
             }
             .padding(10)
@@ -129,7 +130,7 @@ struct DesignStudioView: View {
 
     private var minimalRow: some View {
         HStack(spacing: 12) {
-            HStack { IslandMinimal(move: sample.state.displayMove, presentation: IslandPresentation(sample.state)) }
+            HStack { IslandMinimal(move: sample.state.displayMove, presentation: IslandPresentation(sample.state), symbol: sample.state.pieceSymbol, accent: IslandAccent.resolve(sample.state)) }
                 .padding(.horizontal, 11)
                 .frame(height: 34)
                 .background(Capsule().fill(.black))

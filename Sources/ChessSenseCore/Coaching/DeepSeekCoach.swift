@@ -126,4 +126,58 @@ public struct DeepSeekCoach: Sendable {
         guard text.count >= 12 else { return nil }
         return text
     }
+
+    // MARK: - Island tip
+
+    /// A version constrained for the Dynamic Island: one sentence, one idea, hard length cap.
+    /// The length is enforced in the prompt *and* validated afterwards, so the view never has
+    /// to ellipsize. An unusable answer returns nil and the caller keeps the local tip.
+    public static func tipPrompt(move: Move, in position: ChessPosition, san: String) -> String {
+        let mover = position.board[move.from]
+        var kind = "piece"
+        if case let .piece(k, _) = mover { kind = MoveExplainer.pieceName(k) }
+        return """
+        Write ONE sentence of at most 55 characters for a small wrist-sized widget.
+        A \(kind) moves. (Internal reference, never quote: \(san))
+
+        Hard rules:
+        - At most 55 characters. Shorter is better. Never use an ellipsis.
+        - One idea only: what the move achieves.
+        - No chess notation of any kind: no square names, no piece letters, no x, +, #, O-O.
+        - Plain English. No lists, no quotes, no opening like "This move".
+        """
+    }
+
+    public func tip(
+        move: Move,
+        in position: ChessPosition,
+        san: String,
+        transport: any EngineTransport = URLSessionTransport()
+    ) async throws -> String? {
+        guard isConfigured else { return nil }
+        var request = URLRequest(url: Self.endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 6
+
+        let body = Request(
+            model: model,
+            messages: [.init(role: "user",
+                             content: Self.tipPrompt(move: move, in: position, san: san))],
+            temperature: 0.3,
+            max_tokens: 40
+        )
+        request.httpBody = try JSONEncoder().encode(body)
+        guard let url = request.url else { return nil }
+        let (data, code) = try await transport.post(url, body: request.httpBody, headers: [
+            "Authorization": "Bearer \(apiKey)",
+            "Content-Type": "application/json",
+        ])
+        guard code == 200 else { throw EngineError.badResponse(code) }
+        let decoded = try JSONDecoder().decode(Response.self, from: data)
+        guard let text = Self.sanitize(decoded.choices.first?.message.content) else { return nil }
+        let clamped = MoveExplainer.clamped(text)
+        return clamped.count >= 12 ? clamped : nil
+    }
 }

@@ -67,17 +67,6 @@ public func advantageTint(_ text: String) -> Color {
     return Island.neutral
 }
 
-extension String {
-    /// Clamped to one Island line without slicing a word in half.
-    var islandShort: String {
-        let limit = 46
-        guard count > limit else { return self }
-        let head = prefix(limit)
-        guard let cut = head.lastIndex(of: " ") else { return head + "…" }
-        return head[..<cut] + "…"
-    }
-}
-
 // MARK: - Small parts
 
 /// A four-dot checker mark: the app's own glyph, legible at 11 pt.
@@ -179,11 +168,7 @@ public struct AdvantageBar: View {
             ZStack(alignment: .leading) {
                 Capsule().fill(.white.opacity(0.075))
                 Capsule()
-                    .fill(LinearGradient(
-                        colors: [tint.opacity(0.7), tint],
-                        startPoint: growRight ? .leading : .trailing,
-                        endPoint: growRight ? .trailing : .leading
-                    ))
+                    .fill(tint)
                     .frame(width: max(2, half * magnitude))
                     .offset(x: growRight ? half : half - half * magnitude)
                     .animation(.snappy(duration: 0.5), value: f)
@@ -271,64 +256,81 @@ public struct IslandCompactTrailing: View {
     let move: String
     let trusted: Bool
     let accent: Color
+    let evalText: String
 
-    public init(move: String, trusted: Bool, accent: Color = .white) {
+    public init(move: String, trusted: Bool, accent: Color = .white, evalText: String = "") {
         self.move = move
         self.trusted = trusted
         self.accent = accent
-    }
-
-    private var presentation: IslandPresentation {
-        guard trusted else { return .rejected }
-        return (move.isEmpty || move == "----") ? .pending : .move
+        self.evalText = evalText
     }
 
     public var body: some View {
-        switch presentation {
-        case .rejected:
-            EmptyView()
-        case .pending:
-            SkeletonBar(width: 28, height: 11)
-        case .move:
-            Text(move)
-                .font(.system(size: 14, weight: .heavy, design: .rounded))
-                .tracking(-0.4)
-                .monospacedDigit()
-                .foregroundStyle(accent)
-                .shadow(color: accent.opacity(0.35), radius: 5)
-                .lineLimit(1)
-                .minimumScaleFactor(0.55)
-                .contentTransition(.numericText())
-                .animation(.snappy(duration: 0.35), value: move)
+        if !trusted {
+            Image(systemName: "eye.slash.fill")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(Island.amber)
+        } else {
+            HStack(spacing: 2) {
+                Image(systemName: arrow)
+                    .font(.system(size: 7.5, weight: .black))
+                Text(evalText.isEmpty ? "0.0" : evalText)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+            }
+            .foregroundStyle(advantageTint(evalText.isEmpty ? "0" : evalText))
+            .lineLimit(1)
+            .animation(.snappy(duration: 0.4), value: evalText)
         }
+    }
+
+    private var arrow: String {
+        let f = advantageFraction(evalText.isEmpty ? "0" : evalText)
+        if f > 0.56 { return "arrow.up.right" }
+        if f < 0.44 { return "arrow.down.right" }
+        return "equal"
     }
 }
 
 public struct IslandMinimal: View {
     let move: String
     var presentation: IslandPresentation = .move
+    var symbol: String = ""
+    var accent: Color = .white
 
-    public init(move: String, presentation: IslandPresentation = .move) {
+    public init(
+        move: String,
+        presentation: IslandPresentation = .move,
+        symbol: String = "",
+        accent: Color = .white
+    ) {
         self.move = move
         self.presentation = presentation
+        self.symbol = symbol
+        self.accent = accent
     }
 
     public var body: some View {
-        switch presentation {
-        case .rejected:
-            Image(systemName: "eye.slash.fill")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Island.amber)
-        case .pending:
-            SkeletonBar(width: 20, height: 8)
-        case .move:
-            Text(move)
-                .font(.system(size: 10.5, weight: .heavy, design: .rounded))
-                .tracking(-0.3)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
+        Group {
+            switch presentation {
+            case .rejected:
+                Image(systemName: "eye.slash.fill")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Island.amber)
+            case .pending:
+                SkeletonBar(width: 16, height: 16)
+            case .move:
+                if symbol.isEmpty {
+                    CheckerMark(size: 3.4, gap: 2.6, tint: accent)
+                } else {
+                    Text(symbol)
+                        .font(.system(size: 15))
+                        .foregroundStyle(accent)
+                }
+            }
         }
+        .frame(width: 18, height: 18)
     }
 }
 
@@ -367,11 +369,10 @@ public struct IslandExpandedMove: View {
         case .move:
             let accent = IslandAccent.resolve(state)
             Text(state.displayMove)
-                .font(.system(size: Island.moveSize, weight: .heavy, design: .rounded))
-                .tracking(-1.0)
+                .font(.system(size: Island.moveSize, weight: .semibold, design: .rounded))
+                .tracking(-0.8)
                 .monospacedDigit()
                 .foregroundStyle(.white)
-                .shadow(color: accent.opacity(0.45), radius: 10, y: 1)
                 .lineLimit(1)
                 .minimumScaleFactor(0.55)
                 .contentTransition(.numericText())
@@ -395,41 +396,39 @@ public struct IslandExpandedBottom: View {
     private var presentation: IslandPresentation { IslandPresentation(state) }
     private var accent: Color { IslandAccent.resolve(state) }
 
-    /// One line, with a colour-coded spine, and inset from the card's corner curve.
+    /// One idea, at most two lines, never ellipsized.
     ///
-    /// Full-bleed text was being sliced by the bottom-left curve of the Island, and three
-    /// lines turned the whole thing into a notification banner.
+    /// The copy is bounded at the source (`MoveExplainer.islandTip`, 60 characters) and on the
+    /// model side (a 55-character instruction plus a validated clamp), so this view never has
+    /// to truncate and never has to shrink the type below the system minimum.
     public var body: some View {
-        HStack(alignment: .top, spacing: 7) {
+        HStack(alignment: .top, spacing: 8) {
             Capsule()
-                .fill(LinearGradient(colors: [accent, accent.opacity(0.25)],
-                                     startPoint: .top, endPoint: .bottom))
-                .frame(width: 2.5, height: 12)
-                .padding(.top, 2)
-                .opacity(presentation == .rejected ? 0.9 : 1)
+                .fill(accent)
+                .frame(width: 2, height: 12)
+                .padding(.top, 3)
 
-            Text(detailText)
-                .font(.system(size: Island.whySize, weight: .medium))
-                .lineSpacing(1.2)
-                .foregroundStyle(.white.opacity(0.74))
-                .lineLimit(3)
+            Text(tipText)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineSpacing(1)
+                .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
                 .contentTransition(.opacity)
-                .animation(.easeOut(duration: 0.25), value: detailText)
+                .animation(.snappy(duration: 0.3), value: tipText)
         }
+        .padding(.horizontal, 4)
+        .padding(.bottom, 2)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 5)
     }
 
-    private var detailText: String {
+    private var tipText: String {
         switch presentation {
-        case .rejected:
-            return "Couldn't read the board — move again"
-        case .pending:
-            return "Reading the board…"
+        case .rejected: return "Couldn't read the board. Move, then try again."
+        case .pending: return "Reading the board"
         case .move:
-            if !state.why.isEmpty { return state.why }
-            if !state.principalVariation.isEmpty { return state.principalVariation }
+            if !state.tip.isEmpty { return state.tip }
+            if !state.why.isEmpty { return MoveExplainer.clamped(state.why) }
             return state.provenance
         }
     }
@@ -457,11 +456,10 @@ public struct LockScreenCard: View {
                     SkeletonBar(width: 130, height: 30)
                 } else {
                     Text(state.displayMove)
-                        .font(.system(size: 32, weight: .heavy, design: .rounded))
-                        .tracking(-1.1)
+                        .font(.system(size: 32, weight: .semibold, design: .rounded))
+                        .tracking(-0.9)
                         .monospacedDigit()
                         .foregroundStyle(.white)
-                        .shadow(color: accent.opacity(0.4), radius: 12, y: 1)
                 }
                 if presentation == .move {
                     PieceBadge(symbol: state.pieceSymbol, accent: accent, diameter: 26)

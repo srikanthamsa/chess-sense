@@ -26,6 +26,9 @@ public struct BestMoveAttributes: ActivityAttributes {
         public var playerEval: String
         /// Unicode glyph of the piece that moves, e.g. "♘". Empty when unknown.
         public var pieceSymbol: String
+        /// One sentence for the Island, guaranteed short and never ellipsized. The full
+        /// explanation stays in `why` for the lock screen and the app.
+        public var tip: String
 
         public init(
             uci: String,
@@ -36,7 +39,8 @@ public struct BestMoveAttributes: ActivityAttributes {
             trusted: Bool,
             why: String = "",
             playerEval: String = "",
-            pieceSymbol: String = ""
+            pieceSymbol: String = "",
+            tip: String = ""
         ) {
             self.uci = uci
             self.san = san
@@ -47,6 +51,7 @@ public struct BestMoveAttributes: ActivityAttributes {
             self.why = why
             self.playerEval = playerEval
             self.pieceSymbol = pieceSymbol
+            self.tip = tip
         }
 
         /// Signed value used for colour, arrow and bar. Falls back to the raw engine value.

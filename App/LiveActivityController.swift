@@ -43,6 +43,16 @@ enum LiveActivityController {
         }
     }
 
+    /// Refines only the tip, in place. Used when the language model answers after the move
+    /// has already been shown; the move itself never waits on the model.
+    static func updateTip(_ text: String) async {
+        guard let activity = Activity<BestMoveAttributes>.activities.first else { return }
+        var state = activity.content.state
+        guard state.tip != text else { return }
+        state.tip = text
+        await activity.update(ActivityContent(state: state, staleDate: nil))
+    }
+
     /// Pushes a new best move, or an explicit "I could not read the board" state.
     /// A low-confidence read must never be rendered as a move.
     ///
@@ -50,7 +60,7 @@ enum LiveActivityController {
     /// still produces an Island instead of silently doing nothing.
     static func update(
         _ move: EngineMove?, why: String, trusted: Bool,
-        playerEval: String = "", pieceSymbol: String = ""
+        playerEval: String = "", pieceSymbol: String = "", tip: String = ""
     ) async {
         if Activity<BestMoveAttributes>.activities.isEmpty {
             _ = try? start()

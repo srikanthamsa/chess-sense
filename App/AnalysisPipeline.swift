@@ -30,6 +30,8 @@ enum AnalysisPipeline {
         let playerEval: String
         /// Unicode glyph of the piece that moves, for the Island badge.
         let pieceSymbol: String
+        /// One short sentence for the Island. Never ellipsized: the length is bounded here.
+        let tip: String
     }
 
     // MARK: - Analyse
@@ -78,7 +80,8 @@ enum AnalysisPipeline {
                 position: position,
                 explainedMove: nil,
                 playerEval: "",
-                pieceSymbol: ""
+                pieceSymbol: "",
+                tip: ""
             )
         }
 
@@ -160,6 +163,9 @@ enum AnalysisPipeline {
                         return MoveExplainer.symbol(for: kind, color: color)
                     }
                     return ""
+                } ?? "",
+                tip: explained.map {
+                    MoveExplainer.islandTip(move: $0, in: position, evalText: move.evalText)
                 } ?? ""
             )
         } catch {
@@ -175,7 +181,8 @@ enum AnalysisPipeline {
                 position: position,
                 explainedMove: sync.lastMove,
                 playerEval: "",
-                pieceSymbol: ""
+                pieceSymbol: "",
+                tip: ""
             )
         }
     }
@@ -214,7 +221,8 @@ enum AnalysisPipeline {
 
         await LiveActivityController.update(outcome.move, why: outcome.why, trusted: true,
                                             playerEval: outcome.playerEval,
-                                            pieceSymbol: outcome.pieceSymbol)
+                                            pieceSymbol: outcome.pieceSymbol,
+                                            tip: outcome.tip)
 
         if let key = APIKeyStore.key, !key.isEmpty,
            let move = outcome.move, let resolved = outcome.explainedMove {
@@ -224,6 +232,11 @@ enum AnalysisPipeline {
             let evalText = move.evalText
             Task.detached(priority: .utility) {
                 let coach = DeepSeekCoach(apiKey: key)
+                if let better = try? await coach.tip(
+                    move: resolved, in: position, san: san
+                ) {
+                    await LiveActivityController.updateTip(better)
+                }
                 if let better = try? await coach.explain(
                     move: resolved,
                     in: position,

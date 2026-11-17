@@ -131,3 +131,60 @@ final class CoachingTests: XCTestCase {
         XCTAssertTrue(text.contains("developing"), text)
     }
 }
+
+/// The Island tip is bounded at the source, so the view never truncates.
+final class IslandTipTests: XCTestCase {
+
+    private func position(_ fen: String) throws -> ChessPosition {
+        try XCTUnwrap(ChessPosition(fen: fen))
+    }
+
+    private func tip(_ uci: String, _ fen: String, eval: String? = "+0.30") throws -> String {
+        let pos = try position(fen)
+        let move = try XCTUnwrap(pos.move(uci: uci), "\(uci) illegal")
+        return MoveExplainer.islandTip(move: move, in: pos, evalText: eval)
+    }
+
+    /// Every realistic move type must produce a tip that fits two lines at subheadline size.
+    func testEveryTipFitsTheLimit() throws {
+        let cases: [(String, String)] = [
+            ("e2e4", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"),
+            ("g1f3", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"),
+            ("e4d5", "4k3/8/8/3p4/4Q3/8/8/4K3 w - - 0 1"),
+            ("e1g1", "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1"),
+            ("a7a8q", "4k3/P7/8/8/8/8/8/4K3 w - - 0 1"),
+            ("a1a8", "6k1/5ppp/8/8/8/8/8/R3K3 w - - 0 1"),
+            ("e5c6", "r3kbnr/pp3ppp/1qn1p3/3pNbB1/3P4/1B6/PPP2PPP/RN1QK2R w - - 0 1"),
+        ]
+        for (uci, fen) in cases {
+            let text = try tip(uci, fen)
+            XCTAssertLessThanOrEqual(text.count, MoveExplainer.islandTipLimit, "\(uci): \(text)")
+            XCTAssertFalse(text.contains("…"), "no ellipsis allowed: \(text)")
+            XCTAssertFalse(text.contains("..."), "no ellipsis allowed: \(text)")
+            XCTAssertFalse(text.isEmpty, uci)
+            // Sentence-shaped: starts with a capital, no dangling punctuation.
+            XCTAssertTrue(text.first?.isUppercase ?? false, text)
+            XCTAssertFalse([",", "-", ":", ";"].contains(String(text.last ?? " ")), text)
+        }
+    }
+
+    /// The worst case the UI must survive: a long model answer.
+    func testOverlongCopyIsCutWithoutAnEllipsis() {
+        let long = "Your rook slides all the way across the back row to join its partner and double the attack on the open file"
+        let clamped = MoveExplainer.clamped(long)
+        XCTAssertLessThanOrEqual(clamped.count, MoveExplainer.islandTipLimit)
+        XCTAssertFalse(clamped.contains("…"))
+        XCTAssertFalse(clamped.contains("..."))
+        XCTAssertFalse(clamped.hasSuffix(" "), "no trailing space")
+        // Never sliced mid-word.
+        XCTAssertFalse(clamped.hasSuffix("do"), clamped)
+        XCTAssertEqual(MoveExplainer.clamped("Short."), "Short.")
+    }
+
+    func testNoTipContainsNotation() throws {
+        let text = try tip("g1f3", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        XCTAssertNil(text.range(of: "\\b[a-h][1-8]\\b", options: .regularExpression), text)
+        XCTAssertFalse(text.contains("x"), text)
+        XCTAssertFalse(text.contains("+"), text)
+    }
+}
