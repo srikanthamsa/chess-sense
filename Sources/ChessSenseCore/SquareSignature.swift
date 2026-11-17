@@ -48,6 +48,10 @@ public enum SquareExtractor {
     /// Width of the border band sampled for a square's background colour, as a fraction
     /// of the square.
     public static let ringWidth = 0.22
+    /// Side of each corner patch, as a fraction of the square.
+    public static let cornerPatch = 0.18
+    /// Inset of the corner patches from the square's inner bounds.
+    public static let cornerInset = 0.04
     /// RGB distance from the square's background above which a pixel counts as ink.
     public static let inkThreshold = 60.0
     /// Sub-cell coverage above which a shape bit is set.
@@ -90,6 +94,43 @@ public enum SquareExtractor {
         let x1 = sq.x + sq.w - insetX
         let y1 = sq.y + sq.h - insetY
         return (x0, y0, x1, y1, max(1, x1 - x0), max(1, y1 - y0))
+    }
+
+    /// Most common colour in each of a square's four corner patches.
+    ///
+    /// The ring is the wrong place to look when a large glyph owns it — the captured frame
+    /// with a black knight on f6 reported a ring of RGB(33,29,43), i.e. the knight's own
+    /// fill. A glyph is centred, so at least one corner is nearly always pure square.
+    public static func cornerModes(
+        image: PixelImage, rect: BoardRect, rank: Int, file: Int
+    ) -> [RGB] {
+        let b = innerBounds(rect: rect, rank: rank, file: file)
+        let patch = max(3, Int(Double(min(b.w, b.h)) * cornerPatch))
+        let inset = max(1, Int(Double(min(b.w, b.h)) * cornerInset))
+        let origins = [
+            (b.x0 + inset, b.y0 + inset),
+            (b.x1 - inset - patch, b.y0 + inset),
+            (b.x0 + inset, b.y1 - inset - patch),
+            (b.x1 - inset - patch, b.y1 - inset - patch),
+        ]
+        return origins.map { origin in
+            var hist = [Int](repeating: 0, count: 4096)
+            var sums = [Int](repeating: 0, count: 4096 * 3)
+            for y in origin.1..<(origin.1 + patch) where y >= 0 && y < image.height {
+                for x in origin.0..<(origin.0 + patch) where x >= 0 && x < image.width {
+                    let c = image.rgb(x, y)
+                    let idx = (c.r >> 4) << 8 | (c.g >> 4) << 4 | (c.b >> 4)
+                    hist[idx] += 1
+                    sums[idx * 3] += c.r
+                    sums[idx * 3 + 1] += c.g
+                    sums[idx * 3 + 2] += c.b
+                }
+            }
+            var best = 0
+            for (i, c) in hist.enumerated() where c > hist[best] { best = i }
+            let n = max(1, hist[best])
+            return RGB(sums[best * 3] / n, sums[best * 3 + 1] / n, sums[best * 3 + 2] / n)
+        }
     }
 
     /// Most common colour in a square's border ring. The ring is usually pure board
@@ -146,7 +187,7 @@ public enum SquareExtractor {
         file: Int
     ) -> SquareSignature {
         let b = innerBounds(rect: rect, rank: rank, file: file)
-        let bg = palette.background(rank: rank, file: file)
+        let bg = palette.background(rank: rank, file: file, image: image, rect: rect)
         let bgLuma = bg.luminance
         let brightThreshold = min(bgLuma + brightenMargin, brightThresholdCap)
 

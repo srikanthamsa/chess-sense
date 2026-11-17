@@ -42,9 +42,31 @@ public struct BoardPalette: Sendable {
     /// fell back to the palette colour and the entire highlight was masked as ink
     /// ("no template matched e7, closest shape distance 59"). The same highlight on a
     /// light square moved less than 60 and worked, which is why it looked intermittent.
-    public func background(rank: Int, file: Int) -> RGB {
-        let ring = ringModes[rank * 8 + file]
-        return Self.isPieceFill(ring) ? boardColour(rank: rank, file: file) : ring
+    /// Candidates are the border-ring colour and the four corner-patch colours. Whichever
+    /// of those could be a *square* wins, preferring the one closest to the palette. That
+    /// one rule covers every case seen on device:
+    ///
+    /// - empty square            -> ring is the square
+    /// - ordinary piece          -> ring is the square
+    /// - oversized glyph         -> ring is the glyph's fill, a corner is the square
+    /// - last-move / check tint  -> ring and corners both carry the tint
+    /// - tint *plus* oversized glyph -> ring is the glyph, a corner is the tint.
+    ///   This is the f6 failure: a black knight on a highlighted square reported
+    ///   ring RGB(33,29,43) -- the knight's own fill -- so the ring had to be discarded.
+    public func background(rank: Int, file: Int, image: PixelImage, rect: BoardRect) -> RGB {
+        let expected = boardColour(rank: rank, file: file)
+        var candidates = [ringModes[rank * 8 + file]]
+        candidates.append(contentsOf: SquareExtractor.cornerModes(
+            image: image, rect: rect, rank: rank, file: file
+        ))
+
+        let squareLike = candidates.filter { !Self.isPieceFill($0) }
+        guard let best = squareLike.min(by: {
+            rgbDistance($0, expected) < rgbDistance($1, expected)
+        }) else {
+            return expected
+        }
+        return best
     }
 
     /// True for colours that can only be piece artwork, never a board square.

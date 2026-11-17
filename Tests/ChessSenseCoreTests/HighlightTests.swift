@@ -56,7 +56,7 @@ final class HighlightTests: XCTestCase {
                              "this tint is further than the old 60-unit tolerance, which is why it broke")
         XCTAssertTrue(BoardLocator.isBoardColor(ring.r, ring.g, ring.b),
                       "but it is still a board colour, so it must be used as the background")
-        XCTAssertEqual(palette.background(rank: 1, file: 4), ring)
+        XCTAssertEqual(palette.background(rank: 1, file: 4, image: img, rect: rect), ring)
 
         // The signature must agree: an empty highlighted square has no ink.
         let sigs = SquareExtractor.extract(image: img, rect: rect, palette: palette)
@@ -81,6 +81,38 @@ final class HighlightTests: XCTestCase {
                                "\(BoardRect.squareName(rank: rank, file: file))")
             }
         }
+    }
+
+    // MARK: - Oversized glyph owning the ring
+
+    /// Captured on the phone: a black knight on a highlighted f6. The knight is large
+    /// enough that the square's border ring is *entirely the knight's own fill*
+    /// (RGB(33,29,43)), so any rule that samples the ring takes the piece for the square
+    /// and masks the whole square as ink: "no template matched f6, closest shape
+    /// distance 59". Board corners are the fix — a glyph is centred, so at least one
+    /// corner is pure square.
+    func testOversizedGlyphOnAHighlightedSquareStillReads() throws {
+        let (book, _, _) = try BoardReader.calibrate(image: try image("taketaketake-start"))
+        let frame = try image("taketaketake-knight-highlight")
+
+        let read = try BoardReader.read(image: frame, book: book)
+
+        XCTAssertEqual(
+            read.fen,
+            "rnbqkb1r/ppp2ppp/4pn2/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 0 1"
+        )
+        XCTAssertTrue(read.isTrustworthy)
+        XCTAssertLessThanOrEqual(read.worstShapeDistance, 8)
+
+        // f6 is the highlighted square and holds the black knight that owns the ring.
+        let rect = read.rect
+        let ring = SquareExtractor.ringMode(image: frame, rect: rect, rank: 2, file: 5)
+        XCTAssertTrue(BoardPalette.isPieceFill(ring),
+                      "the ring really is the knight's fill: \(ring)")
+        XCTAssertEqual(book.classify(read.signatures[2 * 8 + 5])?.piece,
+                       .piece(.knight, .black))
+        XCTAssertEqual(book.classify(read.signatures[0 * 8 + 6])?.piece, .empty,
+                       "g8 is empty; the knight left it")
     }
 
     // MARK: - A clean frame with the same highlight
