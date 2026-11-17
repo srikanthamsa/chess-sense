@@ -529,7 +529,7 @@ public struct LockScreenCard: View {
     private var accent: Color { IslandAccent.resolve(state) }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: 12) {
             header
 
             HStack(alignment: .center, spacing: 10) {
@@ -576,7 +576,9 @@ public struct LockScreenCard: View {
             }
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 16)
+        .padding(.top, 16)
+        // With the provenance row gone the card had no bottom breathing space left.
+        .padding(.bottom, 20)
         .accessibilityElement(children: .combine)
     }
 

@@ -43,9 +43,11 @@
 		53B175473A65D3FB0F7398AC /* tbprobe.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0E3F478F711AC2426FD6BA53 /* tbprobe.cpp */; };
 		545DB09A4B9CF9A4A0255FBD /* bitbase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BA68ECD395C05A60F94EA65E /* bitbase.cpp */; };
 		5500F1DD88363E199F3A6779 /* misc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4014C940C72AF8BF06C38F77 /* misc.cpp */; };
+		553442D590733B1BB78A41B8 /* PlayfairDisplay-Italic-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FCE6066FF2524D3918872B77 /* PlayfairDisplay-Italic-Variable.ttf */; };
 		5AC3319463D4424D26FF9F44 /* EngineProbeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC64E0070A696518E70FA822 /* EngineProbeView.swift */; };
 		612CE687BB39401DD6308B4C /* DeepSeekCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74A8E4086EBCF38DFA3B309C /* DeepSeekCoach.swift */; };
 		67E94DD2D18A937CF0531884 /* ContinuousMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05DA87845331E93761FC4C4A /* ContinuousMode.swift */; };
+		692B6E203FF1FE98F99A2AD6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8705F6E1E86C249571D88DE7 /* Assets.xcassets */; };
 		69754A83F50A3D6D99CDE111 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF402E798915725726C85D4 /* AppGroup.swift */; };
 		6A5ACF5C8592286F3F2424B3 /* EngineBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37FC99D8AF824AD84CC9B197 /* EngineBackend.swift */; };
 		6BCAA75C203C679F4EC63189 /* benchmark.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D1F4985E1A705637BAE7584C /* benchmark.cpp */; };
@@ -73,6 +75,7 @@
 		A79AB63687AD06E4D452F17D /* SelfTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BBFC2BD746F5D8BA9936607 /* SelfTest.swift */; };
 		B0F83368E8021A7384E481D4 /* InstrumentSerif-Italic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6C3F26DB5EFBCC38C395BB9F /* InstrumentSerif-Italic.ttf */; };
 		B102B1A4A20C4A387219968E /* BroadcastButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 993F8A16AE80622D1B3252A7 /* BroadcastButton.swift */; };
+		B16AA8DB30BE745B5D24BE19 /* Info 2.plist in Resources */ = {isa = PBXBuildFile; fileRef = 44C57CFE88707DD9FF943122 /* Info 2.plist */; };
 		B364745A966A0F86EB7B7713 /* IslandViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 922F46B34172BE824B64CDD2 /* IslandViews.swift */; };
 		BA333221F30661F352AFA9E9 /* thread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED41311558CB94439B9776BE /* thread.cpp */; };
 		BC730B7F194C79A367E69907 /* ChessSenseWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CF03B244158F53C8CBA886BE /* ChessSenseWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -162,6 +165,7 @@
 		4014C940C72AF8BF06C38F77 /* misc.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = misc.cpp; sourceTree = "<group>"; };
 		40C240C8BF99BD04475300C3 /* movegen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = movegen.h; sourceTree = "<group>"; };
 		440122C1C88B7305D3982860 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		44C57CFE88707DD9FF943122 /* Info 2.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Info 2.plist"; sourceTree = "<group>"; };
 		47A2A2B80787140525AF7B09 /* ChessSenseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChessSenseApp.swift; sourceTree = "<group>"; };
 		4B8F65A876CB6971684D12AA /* CalibrationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalibrationStore.swift; sourceTree = "<group>"; };
 		4D8B846A81CEB58A1799604A /* SAN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAN.swift; sourceTree = "<group>"; };
@@ -188,6 +192,7 @@
 		829AE97B67BEE1B196A14519 /* evaluate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = evaluate.h; sourceTree = "<group>"; };
 		848489AE6BA9246ABC1C1C7E /* taketaketake-start.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "taketaketake-start.png"; sourceTree = "<group>"; };
 		85C157B1A2448DA89DED5195 /* search.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = search.cpp; sourceTree = "<group>"; };
+		8705F6E1E86C249571D88DE7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		922F46B34172BE824B64CDD2 /* IslandViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IslandViews.swift; sourceTree = "<group>"; };
 		93284D4CEC5594349AE37627 /* BoardPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardPalette.swift; sourceTree = "<group>"; };
 		93A7C26BF2E0E355E307A950 /* AnalyzeBoardIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeBoardIntent.swift; sourceTree = "<group>"; };
@@ -228,6 +233,7 @@
 		F46FCB1BCD80699F224B1005 /* pawns.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = pawns.cpp; sourceTree = "<group>"; };
 		F99C1C7689BF5E07BD9B73A7 /* APIKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeyStore.swift; sourceTree = "<group>"; };
 		FC64E0070A696518E70FA822 /* EngineProbeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineProbeView.swift; sourceTree = "<group>"; };
+		FCE6066FF2524D3918872B77 /* PlayfairDisplay-Italic-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlayfairDisplay-Italic-Variable.ttf"; sourceTree = "<group>"; };
 		FF95840337F203E8B06EB712 /* thread_win32_osx.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = thread_win32_osx.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -366,6 +372,7 @@
 				B7673827281780BE6474C3A2 /* AnalysisPipeline.swift */,
 				93A7C26BF2E0E355E307A950 /* AnalyzeBoardIntent.swift */,
 				F99C1C7689BF5E07BD9B73A7 /* APIKeyStore.swift */,
+				8705F6E1E86C249571D88DE7 /* Assets.xcassets */,
 				1FA227B584364785F5983D62 /* BrandFont.swift */,
 				993F8A16AE80622D1B3252A7 /* BroadcastButton.swift */,
 				4B8F65A876CB6971684D12AA /* CalibrationStore.swift */,
@@ -377,6 +384,7 @@
 				0E06747B1697BEB118956382 /* DesignStudioView.swift */,
 				00FC3DFC1B7E50162BD3B068 /* Diagnostics.swift */,
 				FC64E0070A696518E70FA822 /* EngineProbeView.swift */,
+				44C57CFE88707DD9FF943122 /* Info 2.plist */,
 				5267AF95E90FDC18A5669002 /* Info.plist */,
 				215D655E9AA76356472AF876 /* LiveActivityController.swift */,
 				0B25E9E80CC1CE22B767CC8D /* LocalStockfishBackend.swift */,
@@ -454,6 +462,7 @@
 			children = (
 				6C3F26DB5EFBCC38C395BB9F /* InstrumentSerif-Italic.ttf */,
 				697ABFA047A6A4713C309F4A /* InstrumentSerif-Regular.ttf */,
+				FCE6066FF2524D3918872B77 /* PlayfairDisplay-Italic-Variable.ttf */,
 			);
 			path = Fonts;
 			sourceTree = "<group>";
@@ -573,8 +582,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				692B6E203FF1FE98F99A2AD6 /* Assets.xcassets in Resources */,
+				B16AA8DB30BE745B5D24BE19 /* Info 2.plist in Resources */,
 				B0F83368E8021A7384E481D4 /* InstrumentSerif-Italic.ttf in Resources */,
 				2F5A6195FCF8E912305B5463 /* InstrumentSerif-Regular.ttf in Resources */,
+				553442D590733B1BB78A41B8 /* PlayfairDisplay-Italic-Variable.ttf in Resources */,
 				C19E5E4AC669E49AEB8A0F22 /* README-chesssense.md in Resources */,
 				A0CF18508ADF52C97D93832E /* taketaketake-start.png in Resources */,
 			);

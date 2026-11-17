@@ -28,6 +28,7 @@
 	<array>
 		<string>InstrumentSerif-Regular.ttf</string>
 		<string>InstrumentSerif-Italic.ttf</string>
+		<string>PlayfairDisplay-Italic-Variable.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

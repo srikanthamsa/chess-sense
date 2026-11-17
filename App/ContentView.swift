@@ -88,7 +88,8 @@ struct ContentView: View {
                     // @ScaledMetric keeps the intentional weight and rounded face while
                     // letting the headline grow with the user's type size. A fixed 40 pt
                     // stopped scaling, so sublines overtook it at accessibility sizes.
-                    .font(.brandDisplay(headlineSize))
+                    .font(.brandHero(headlineSize * 1.12))
+                    .tracking(-0.5)
                     .minimumScaleFactor(0.7)
                     .lineLimit(2)
                     .monospacedDigit()
@@ -283,24 +284,30 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 14) {
-                BroadcastButton()
-                    .frame(width: 44, height: 44)
-                    .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 11, style: .continuous)
-                            .strokeBorder(.secondary.opacity(0.25))
-                    )
+            Button {
+                BroadcastStarter.present()
+            } label: {
+                HStack(spacing: 14) {
+                    BroadcastButton()
+                        .frame(width: 54, height: 54)
+                        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                                .strokeBorder(.secondary.opacity(0.25))
+                        )
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Start screen broadcast")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Then turn watching on below")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Start screen broadcast")
+                            .font(.subheadline.weight(.semibold))
+                        Text("Opens the system broadcast sheet")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
                 }
-                Spacer()
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
             Toggle("Watch the screen", isOn: Binding(
                 get: { continuous.active },
