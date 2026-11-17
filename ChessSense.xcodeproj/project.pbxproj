@@ -26,6 +26,7 @@
 		3110947A43403BF0FB183AC8 /* DeepSeekCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74A8E4086EBCF38DFA3B309C /* DeepSeekCoach.swift */; };
 		3346188B5FC17AC1F8849DEE /* position.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DACB3803223190D3F2902404 /* position.cpp */; };
 		341A044ADD6161DF9C56E6B4 /* BoardPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93284D4CEC5594349AE37627 /* BoardPalette.swift */; };
+		346DF3E8AF9BADB0CB7CCDAF /* BoardThumbnail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 727F5ED01CB1F0DF834B562A /* BoardThumbnail.swift */; };
 		3C91ADC4AC4C02910C490125 /* BroadcastButtonUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B74E84CBF761A5DFE2AC185 /* BroadcastButtonUITests.swift */; };
 		3F38E6479C6CE68097C62522 /* psqt.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D48A96754575986E3BAB422C /* psqt.cpp */; };
 		3FA7102193FFE05B82CBC5EF /* evaluate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 17C6BC02A0577A7A37F8B293 /* evaluate.cpp */; };
@@ -169,6 +170,7 @@
 		6E8D92EA8F06340C5B3BC7A1 /* movepick.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = movepick.cpp; sourceTree = "<group>"; };
 		6FE9F79F765F7DE0602DBA4C /* EngineMove.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineMove.swift; sourceTree = "<group>"; };
 		7117063BC51866495C4A5F94 /* uci.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = uci.cpp; sourceTree = "<group>"; };
+		727F5ED01CB1F0DF834B562A /* BoardThumbnail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardThumbnail.swift; sourceTree = "<group>"; };
 		74A8E4086EBCF38DFA3B309C /* DeepSeekCoach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepSeekCoach.swift; sourceTree = "<group>"; };
 		7A8FC67118C7E88CDE96E72C /* SquareSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSignature.swift; sourceTree = "<group>"; };
 		7AE83E4FBCE3787774071032 /* search.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = search.h; sourceTree = "<group>"; };
@@ -359,6 +361,7 @@
 				93A7C26BF2E0E355E307A950 /* AnalyzeBoardIntent.swift */,
 				F99C1C7689BF5E07BD9B73A7 /* APIKeyStore.swift */,
 				8705F6E1E86C249571D88DE7 /* Assets.xcassets */,
+				727F5ED01CB1F0DF834B562A /* BoardThumbnail.swift */,
 				1FA227B584364785F5983D62 /* BrandFont.swift */,
 				4B8F65A876CB6971684D12AA /* CalibrationStore.swift */,
 				35044CCDEF852F975B11F622 /* ChessSense-Bridging-Header.h */,
@@ -591,6 +594,7 @@
 				120B429FDE4C82CBFCA51952 /* BoardOrientation.swift in Sources */,
 				341A044ADD6161DF9C56E6B4 /* BoardPalette.swift in Sources */,
 				C92AD1CB9D094257DDD3302A /* BoardReader.swift in Sources */,
+				346DF3E8AF9BADB0CB7CCDAF /* BoardThumbnail.swift in Sources */,
 				A128D176A158FB5D45D52A05 /* BrandFont.swift in Sources */,
 				CE78988C01CBD1970BC8DD90 /* CSBridge.cpp in Sources */,
 				F58236498407F55523D8DFFC /* CalibrationStore.swift in Sources */,
@@ -699,7 +703,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = 2;
@@ -729,7 +733,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = 2;
@@ -880,7 +884,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = 2;
@@ -931,7 +935,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = 2;

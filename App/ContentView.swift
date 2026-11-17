@@ -34,6 +34,7 @@ struct ContentView: View {
     @State private var subline = "Screenshot a fresh game to calibrate."
     @State private var detail = ""
     @State private var lastMove: String?
+    @State private var lastMoveUCI: String?
     @State private var lastEval: String?
     @State private var lastWhy: String?
 
@@ -67,7 +68,10 @@ struct ContentView: View {
                     }
                 }
             }
-            .onAppear(perform: refresh)
+            .onAppear {
+                refresh()
+                applyDemoIfRequested()
+            }
             .task {
                 guard SelfTest.requested else { return }
                 busy = true
@@ -114,47 +118,66 @@ struct ContentView: View {
 
     private var scoreboard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(headline)
-                .font(.system(size: 62, weight: .black).width(.compressed))
-                .tracking(-1.5)
-                .foregroundStyle(ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.4)
-                .contentTransition(.numericText())
-                .animation(.snappy(duration: 0.35), value: headline)
-
-            HStack(spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(headline)
+                    .font(.system(size: 74, weight: .black).width(.compressed))
+                    .tracking(-2)
+                    .foregroundStyle(ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.34)
+                    .contentTransition(.numericText())
+                    .animation(.snappy(duration: 0.35), value: headline)
                 if let lastEval {
                     evalChip(lastEval)
+                        .transition(.scale(scale: 0.8).combined(with: .opacity))
                 }
-                if let lastMove {
-                    Text(lastMove)
-                        .font(.system(size: 12, weight: .heavy))
-                        .tracking(1.2)
-                        .foregroundStyle(mute)
-                }
-                Spacer()
+                Spacer(minLength: 0)
             }
-            .padding(.top, 6)
 
             Text(subline)
-                .font(.system(size: 13.5, weight: .medium))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(mute)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 10)
 
             if let lastWhy, !lastWhy.isEmpty {
                 Text(lastWhy)
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(ink.opacity(0.72))
-                    .lineLimit(3)
+                    .font(.system(size: 17, weight: .regular))
+                    .lineSpacing(3)
+                    .foregroundStyle(ink.opacity(0.86))
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 8)
+                    .padding(.top, 14)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            if let fen = trackedFEN, fen.contains("/") {
+                BoardThumbnail(fen: fen, highlight: highlightSquares)
+                    .frame(maxWidth: 260)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 18)
+                    .transition(.scale(scale: 0.96).combined(with: .opacity))
             }
         }
+        .animation(.snappy(duration: 0.4), value: lastWhy)
+        .animation(.snappy(duration: 0.4), value: trackedFEN)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.bottom, 22)
+    }
+
+    /// Squares of the last detected move, so the diagram marks what changed.
+    private var highlightSquares: [Int] {
+        guard let uci = lastMoveUCI, uci.count >= 4 else { return [] }
+        func index(_ square: Substring) -> Int? {
+            let characters = Array(square)
+            guard characters.count == 2,
+                  let file = characters[0].asciiValue.map({ Int($0) - 97 }),
+                  let rank = characters[1].wholeNumberValue
+            else { return nil }
+            return (8 - rank) * 8 + file
+        }
+        let from = uci.prefix(2), to = uci.dropFirst(2).prefix(2)
+        return [index(from), index(to)].compactMap { $0 }
     }
 
     /// The scorebox: three facts, evenly spaced, separated by hairlines. Empty values are an
@@ -162,9 +185,9 @@ struct ContentView: View {
     private var statStrip: some View {
         HStack(spacing: 0) {
             stat("MOVE", lastMove ?? "—")
-            Rectangle().fill(hairline).frame(width: 1, height: 30)
+            Rectangle().fill(hairline).frame(width: 1, height: 34)
             stat("TURN", turnText)
-            Rectangle().fill(hairline).frame(width: 1, height: 30)
+            Rectangle().fill(hairline).frame(width: 1, height: 34)
             stat("ENGINE", engineText)
         }
         .padding(.vertical, 12)
@@ -187,7 +210,7 @@ struct ContentView: View {
                 .tracking(1.5)
                 .foregroundStyle(mute)
             Text(value)
-                .font(.system(size: 13, weight: .black).width(.compressed))
+                .font(.system(size: 17, weight: .black).width(.compressed))
                 .tracking(0.4)
                 .foregroundStyle(ink)
                 .lineLimit(1)
@@ -411,6 +434,22 @@ struct ContentView: View {
 
     // MARK: - Actions
 
+    /// -chesssense-demo YES fills the screen with a real analysis so the populated layout can
+    /// be inspected without a calibrated device and a game.
+    private func applyDemoIfRequested() {
+        guard UserDefaults.standard.bool(forKey: "chesssense-demo") else { return }
+        headline = "Nxe4"
+        subline = "Your turn · black"
+        lastMove = "Nxe4"
+        lastMoveUCI = "f6e4"
+        lastEval = "+3.37"
+        lastWhy = "You take a knight with your knight. That puts it in the middle of the "
+            + "board, where it controls the most squares."
+        trackedFEN = "r3k2r/1p3ppp/p3pn2/8/P1pPN3/5NP1/1q3P1P/R2QR1K1 b kq - 1 4"
+        detail = "read 363 · track 8 · engine 21 · total 392 ms\nwall 498 ms"
+        tracking = true
+    }
+
     private func refresh() {
         calibrationDate = store.calibrationDate
         trackedFEN = store.trackedFEN
@@ -486,6 +525,7 @@ struct ContentView: View {
 
     private func present(_ outcome: AnalysisPipeline.Outcome) {
         lastMove = outcome.move?.displayMove
+        lastMoveUCI = outcome.move?.uci
         lastEval = outcome.move.map { outcome.playerEval.isEmpty ? $0.evalText : outcome.playerEval }
         lastWhy = outcome.why.isEmpty ? nil : outcome.why
 
