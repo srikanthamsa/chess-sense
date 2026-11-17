@@ -19,6 +19,8 @@ public struct BestMoveAttributes: ActivityAttributes {
         public var provenance: String
         /// Whether the reader was confident enough to bet on this move.
         public var trusted: Bool
+        /// Plain-English reason, with no chess notation anywhere in it.
+        public var why: String
 
         public init(
             uci: String,
@@ -26,7 +28,8 @@ public struct BestMoveAttributes: ActivityAttributes {
             evalText: String,
             principalVariation: String,
             provenance: String,
-            trusted: Bool
+            trusted: Bool,
+            why: String = ""
         ) {
             self.uci = uci
             self.san = san
@@ -34,6 +37,7 @@ public struct BestMoveAttributes: ActivityAttributes {
             self.principalVariation = principalVariation
             self.provenance = provenance
             self.trusted = trusted
+            self.why = why
         }
 
         public var displayMove: String {
@@ -42,6 +46,27 @@ public struct BestMoveAttributes: ActivityAttributes {
             let from = uci.prefix(2)
             let to = uci.dropFirst(2).prefix(2)
             return "\(from)\u{2013}\(to)"
+        }
+
+        /// 0...1 for an advantage bar, 0.5 = equal. Mate maps to the extremes.
+        public var advantage: Double {
+            if evalText.hasPrefix("-#") { return 0.02 }
+            if evalText.hasPrefix("#") { return 0.98 }
+            guard let value = Double(evalText.replacingOccurrences(of: "+", with: "")) else {
+                return 0.5
+            }
+            // Squash so small edges stay near the middle and big edges saturate.
+            let squashed = tanh(value / 2.4)
+            return min(0.98, max(0.02, 0.5 + squashed / 2))
+        }
+
+        /// Short, sign-only value for the compact Island: "+0.2", "-1.4", "#3".
+        public var compactEval: String {
+            if evalText.hasPrefix("#") || evalText.hasPrefix("-#") { return evalText }
+            guard let value = Double(evalText.replacingOccurrences(of: "+", with: "")) else {
+                return evalText
+            }
+            return String(format: "%+.1f", value)
         }
     }
 

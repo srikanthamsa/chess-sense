@@ -103,6 +103,7 @@ enum SelfTest {
             await LiveActivityController.update(
                 EngineMove(uci: "g1f3", san: "Nf3", principalVariation: "g1f3",
                            evalText: "+0.25", provenance: "selftest"),
+                why: "Your knight comes out towards the middle.",
                 trusted: true
             )
             liveActivity = LiveActivityController.isRunning

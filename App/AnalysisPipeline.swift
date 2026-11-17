@@ -20,6 +20,11 @@ enum AnalysisPipeline {
         let trackingNote: String
         let move: EngineMove?
         let failure: String?
+        /// Plain-English reason for the move, no notation.
+        let why: String
+        /// Position and move as rules objects, so callers can refine the explanation.
+        let position: ChessPosition
+        let explainedMove: Move?
     }
 
     // MARK: - Analyse
@@ -51,7 +56,10 @@ enum AnalysisPipeline {
         }
 
         guard read.isTrustworthy else {
-            Diagnostics.record(image: image, reason: "rejected-read", book: book, rectOverride: read.rect)
+            Diagnostics.record(image: image, reason: "rejected-read", book: book,
+                               rectOverride: read.rect)
+            let position = store.trackedFEN.flatMap(PositionTracker.init(fen:))?.position
+                ?? PositionTracker().position
             return Outcome(
                 fen: read.fen,
                 readFEN: read.fen,
@@ -60,7 +68,10 @@ enum AnalysisPipeline {
                 trackingNote: "",
                 move: nil,
                 failure: "low-confidence read (worst shape \(read.worstShapeDistance), "
-                    + "colour margin \(String(format: "%.2f", read.minColorMargin)))"
+                    + "colour margin \(String(format: "%.2f", read.minColorMargin)))",
+                why: "",
+                position: position,
+                explainedMove: nil
             )
         }
 
@@ -81,14 +92,15 @@ enum AnalysisPipeline {
             note = "position unchanged"
         }
 
-        // Sanity: if tracking produced something whose turn doesn't match the engine's
-        // expectation, the board read and the history disagree — say so rather than guess.
-        let fen = tracker.position.fen
+        let position = tracker.position
+
         do {
-            var move = try await cache.value(for: fen, chain: .default)
-            if let resolved = tracker.position.move(uci: move.uci) {
-                move.san = SAN.san(for: resolved, in: tracker.position)
-                let pv = move.principalVariationSAN(from: tracker.position)
+            var move = try await cache.value(for: position.fen, chain: .default)
+            var resolved: Move?
+            if let engineMove = position.move(uci: move.uci) {
+                resolved = engineMove
+                move.san = SAN.san(for: engineMove, in: position)
+                let pv = move.principalVariationSAN(from: position)
                 if !pv.isEmpty {
                     move = EngineMove(
                         uci: move.uci,
@@ -99,24 +111,36 @@ enum AnalysisPipeline {
                     )
                 }
             }
+            // Coaching for the move about to be played; falls back to the move just played.
+            let explained = resolved ?? sync.lastMove
+            let why = explained.map {
+                MoveExplainer.explain(move: $0, in: position, evalText: move.evalText)
+            } ?? ""
+
             return Outcome(
-                fen: fen,
+                fen: position.fen,
                 readFEN: read.fen,
                 rectangle: read.rect,
                 trusted: true,
                 trackingNote: note.isEmpty ? "" : "\(note), from \(before.sideToMove)",
                 move: move,
-                failure: nil
+                failure: nil,
+                why: why,
+                position: position,
+                explainedMove: explained
             )
         } catch {
             return Outcome(
-                fen: fen,
+                fen: position.fen,
                 readFEN: read.fen,
                 rectangle: read.rect,
                 trusted: true,
                 trackingNote: note,
                 move: nil,
-                failure: "engine: \(error)"
+                failure: "engine: \(error)",
+                why: "",
+                position: position,
+                explainedMove: sync.lastMove
             )
         }
     }
@@ -140,12 +164,37 @@ enum AnalysisPipeline {
 
     // MARK: - Publish
 
+    /// Shows the engine's move immediately with the offline explanation, then upgrades the
+    /// coaching line in place when the language model answers. The move never waits on the
+    /// model, and the model never supplies the move.
     static func analyzeAndPublish(imageData: Data) async throws -> Outcome {
         let outcome = try await analyze(imageData: imageData)
-        if outcome.trusted {
-            await LiveActivityController.update(outcome.move, trusted: outcome.move != nil)
-        } else {
-            await LiveActivityController.update(nil, trusted: false)
+
+        guard outcome.trusted, outcome.move != nil else {
+            await LiveActivityController.update(nil, why: outcome.why, trusted: outcome.trusted)
+            return outcome
+        }
+
+        await LiveActivityController.update(outcome.move, why: outcome.why, trusted: true)
+
+        if let key = APIKeyStore.key, !key.isEmpty,
+           let move = outcome.move, let resolved = outcome.explainedMove {
+            let position = outcome.position
+            let san = move.san ?? ""
+            let pv = move.principalVariation
+            let evalText = move.evalText
+            Task.detached(priority: .utility) {
+                let coach = DeepSeekCoach(apiKey: key)
+                if let better = try? await coach.explain(
+                    move: resolved,
+                    in: position,
+                    evalText: evalText,
+                    san: san,
+                    principalVariation: pv
+                ), !better.isEmpty {
+                    await LiveActivityController.updateWhy(better)
+                }
+            }
         }
         return outcome
     }

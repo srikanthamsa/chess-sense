@@ -22,6 +22,14 @@ public enum EngineError: Error, CustomStringConvertible, Equatable {
 /// Seam for testing: the real one is `URLSession`, the test one is a dictionary.
 public protocol EngineTransport: Sendable {
     func get(_ url: URL) async throws -> (Data, Int)
+    /// Default implementation exists so a GET-only test double still satisfies the protocol.
+    func post(_ url: URL, body: Data?, headers: [String: String]) async throws -> (Data, Int)
+}
+
+public extension EngineTransport {
+    func post(_ url: URL, body: Data?, headers: [String: String]) async throws -> (Data, Int) {
+        throw EngineError.transport
+    }
 }
 
 public struct URLSessionTransport: EngineTransport {
@@ -31,6 +39,17 @@ public struct URLSessionTransport: EngineTransport {
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.timeoutInterval = 6
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let code = (response as? HTTPURLResponse)?.statusCode ?? -1
+        return (data, code)
+    }
+
+    public func post(_ url: URL, body: Data?, headers: [String: String]) async throws -> (Data, Int) {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = body
+        request.timeoutInterval = 8
+        for (key, value) in headers { request.setValue(value, forHTTPHeaderField: key) }
         let (data, response) = try await URLSession.shared.data(for: request)
         let code = (response as? HTTPURLResponse)?.statusCode ?? -1
         return (data, code)
