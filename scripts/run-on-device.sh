@@ -29,6 +29,7 @@ if [[ -z "${UDID:-}" ]]; then
   echo "  - iPhone unlocked, and 'Trust This Computer' tapped"
   echo "  - Settings > Privacy & Security > Developer Mode > On (then restart)"
   echo "  - data-capable cable / a different USB port"
+  echo "  - Xcode > Settings > Accounts: your Apple ID must be added for signing"
   exit 1
 fi
 
@@ -56,7 +57,10 @@ echo
 echo "== build =="
 xcodebuild -project ChessSense.xcodeproj -scheme ChessSense \
   -destination "id=$UDID" -derivedDataPath .build/dd \
-  -allowProvisioningUpdates build
+  -allowProvisioningUpdates \
+  OTHER_SWIFT_FLAGS='-disable-sandbox' \
+  SWIFT_USE_INTEGRATED_DRIVER=NO \
+  build
 
 echo
 echo "== install =="

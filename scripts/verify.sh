@@ -1,25 +1,30 @@
 #!/usr/bin/env bash
-# Everything that can be verified without an Xcode UI session.
+# Everything that can be verified without a phone attached.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-echo "== swift test =="
-# --disable-sandbox: SwiftPM's own sandbox can't start in restricted CI/sandbox
-# environments. Harmless elsewhere; CI runs plain `swift test`.
+echo "== 1/2 swift test =="
+# --disable-sandbox: SwiftPM's own sandbox cannot start in restricted shells.
 swift test --disable-sandbox
 
-echo "== typecheck: core + non-SwiftUI app layer (iOS 17 simulator SDK) =="
-mkdir -p .build/tmp .build/mc
-TMPDIR="$PWD/.build/tmp" xcrun -sdk iphonesimulator swiftc -typecheck \
-  -target arm64-apple-ios17.0-simulator \
-  -module-cache-path .build/mc \
-  $(find Sources/ChessSenseCore -name '*.swift') \
-  Shared/BestMoveAttributes.swift \
-  App/CalibrationStore.swift \
-  App/LiveActivityController.swift \
-  App/AnalysisPipeline.swift
+echo
+echo "== 2/2 build the whole app for the device (unsigned) =="
+# Includes the SwiftUI views, the App Intent and the widget extension, which is the part
+# `swift test` cannot reach.
+#
+# OTHER_SWIFT_FLAGS=-disable-sandbox is what lets swift-plugin-server (SwiftUI macro
+# expansion) start inside a sandboxed terminal; without it every @State errors out with
+# "produced malformed response". Harmless to leave on.
+# CODE_SIGNING_ALLOWED=NO keeps this machine-independent: no Apple ID, no device needed.
+mkdir -p .build/tmp
+TMPDIR="$PWD/.build/tmp" xcodebuild \
+  -project ChessSense.xcodeproj -scheme ChessSense \
+  -destination 'generic/platform=iOS' \
+  -derivedDataPath .build/dd-generic \
+  CODE_SIGNING_ALLOWED=NO \
+  OTHER_SWIFT_FLAGS='-disable-sandbox' \
+  SWIFT_USE_INTEGRATED_DRIVER=NO \
+  build
 
 echo
-echo "OK. The SwiftUI surface is not covered here -- build it in Xcode:"
-echo "  App/ChessSenseApp.swift  App/ContentView.swift  App/AnalyzeBoardIntent.swift  Widgets/BestMoveWidgets.swift"
-echo "(SwiftUI/AppIntents macros need the macro plugin host that a headless sandbox can't start.)"
+echo "OK: tests green, app + widget extension compile for arm64 device."

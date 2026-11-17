@@ -12,5 +12,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Swift version
         run: swift --version
-      - name: Test the reader
+      - name: Test the reader and rules
         run: swift test
+      - name: Compile the app and widget extension for arm64
+        run: |
+          mkdir -p .build/tmp
+          TMPDIR="$PWD/.build/tmp" xcodebuild \
+            -project ChessSense.xcodeproj -scheme ChessSense \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath .build/dd-generic \
+            CODE_SIGNING_ALLOWED=NO \
+            OTHER_SWIFT_FLAGS='-disable-sandbox' \
+            SWIFT_USE_INTEGRATED_DRIVER=NO \
+            build

@@ -224,15 +224,21 @@ Tests/ChessSenseCoreTests/  reader, rules, tracker, engine
 
 ## Verification status
 
-Green and repeatable: `swift test` (43 tests — reader, perft-anchored rules, tracker,
-engine payloads) and an iOS-17-simulator typecheck of the core plus every non-SwiftUI app
-file (`CalibrationStore`, `LiveActivityController`, `AnalysisPipeline`).
+`./scripts/verify.sh` does both, and CI runs the same two steps:
 
-Not yet verified: the SwiftUI surface (`ContentView`, the app entry point, the App Intent,
-the widget). Those expand macros through `swift-plugin-server`, which cannot start in a
-headless sandboxed build — open the project in Xcode to compile them. Nothing on this list
-has been run on a physical device yet, so the Island rendering, App Intent background
-execution and the real end-to-end latency are still unmeasured.
+1. **`swift test`** — 44 tests: reader, perft-anchored rules, tracker, engine payloads.
+2. **Full app build for arm64 device**, unsigned — app target *and* widget extension, so
+   the SwiftUI views, the App Intent and the widget are all compiled, not just assumed.
+   Both products come out as `ChessSense.app` with `ChessSenseWidgets.appex` embedded.
+
+Note for anyone building from a restricted shell: SwiftUI's `@State` needs
+`swift-plugin-server`, which is itself sandboxed, so it fails with `sandbox_apply: Operation
+not permitted` / `produced malformed response`. Passing
+`OTHER_SWIFT_FLAGS='-disable-sandbox'` fixes it. Xcode's UI does not need this.
+
+Not yet verified: nothing has run on a physical device, so Island rendering, App Intent
+background execution and real end-to-end latency are still unmeasured. Signing also needs
+an Apple ID added under Xcode → Settings → Accounts.
 
 ## Notes
 
