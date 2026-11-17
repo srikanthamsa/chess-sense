@@ -25,12 +25,14 @@ struct AnalyzeBoardIntent: AppIntent {
         do {
             let result = try await AnalysisPipeline.analyzeAndPublish(imageData: screenshot.data)
             if let move = result.move, result.trusted {
-                return .result(dialog: "\(move.uci)  \(move.evalText)")
+                // Interpolated literal, not a String variable: `IntentDialog` is
+                // ExpressibleByStringInterpolation, so only literals convert implicitly.
+                return .result(dialog: "\(move.displayMove)  \(move.evalText)")
             }
             if !result.trusted {
                 return .result(dialog: "Board read was not confident — nothing shown.")
             }
-            return .result(dialog: result.failure ?? "No move available.")
+            return .result(dialog: "\(result.failure ?? "No move available.")")
         } catch BoardError.notCalibrated {
             return .result(dialog: "Calibrate chess-sense from a fresh game first.")
         } catch {

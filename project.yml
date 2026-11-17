@@ -14,6 +14,10 @@ settings:
     TARGETED_DEVICE_FAMILY: "1"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     CLANG_ENABLE_MODULES: YES
+    # Personal team for srikanthamsa@gmail.com. Keeps signing automatic so the project
+    # builds on a device without touching Signing & Capabilities. Not a credential —
+    # team identifiers are public in every shipped app's entitlements.
+    DEVELOPMENT_TEAM: XKAAC8TL59
 
 targets:
   ChessSense:
