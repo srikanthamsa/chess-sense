@@ -86,6 +86,14 @@ struct ContentView: View {
                 calibrationDate = store.calibrationDate
                 trackedFEN = store.trackedFEN
             }
+            .task {
+                guard SelfTest.requested else { return }
+                busy = true
+                let report = await SelfTest.run()
+                busy = false
+                headline = report.passed ? "SELF TEST PASSED" : "SELF TEST FAILED"
+                detail = report.text
+            }
             .onChange(of: pickerItem) { _, item in
                 guard let item else { return }
                 Task { await handle(item) }

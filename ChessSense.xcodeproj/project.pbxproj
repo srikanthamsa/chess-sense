@@ -34,7 +34,9 @@
 		98380EC5F9486D63A6D89DC4 /* BoardLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D81CF5DA2C96A53B220BFDC /* BoardLocator.swift */; };
 		9B550A6F2D17D5DCBF3453A3 /* Backends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1BEDF154EF77908E410065 /* Backends.swift */; };
 		9FCCC215BE4746FDF65787D2 /* BestMoveAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64EF75171D6181E98B371106 /* BestMoveAttributes.swift */; };
+		A0CF18508ADF52C97D93832E /* taketaketake-start.png in Resources */ = {isa = PBXBuildFile; fileRef = 848489AE6BA9246ABC1C1C7E /* taketaketake-start.png */; };
 		A57C405EA30579FDAAF22D51 /* PositionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E21E6C35B63E887E8879A4E /* PositionTracker.swift */; };
+		A79AB63687AD06E4D452F17D /* SelfTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BBFC2BD746F5D8BA9936607 /* SelfTest.swift */; };
 		BC730B7F194C79A367E69907 /* ChessSenseWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CF03B244158F53C8CBA886BE /* ChessSenseWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BDDC6341A04710F744480308 /* SquareSignature.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A8FC67118C7E88CDE96E72C /* SquareSignature.swift */; };
 		C8F82D56880218383F3B0007 /* Move.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CA8EEF7F8E0173678EB34A1 /* Move.swift */; };
@@ -89,10 +91,12 @@
 		4E21E6C35B63E887E8879A4E /* PositionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionTracker.swift; sourceTree = "<group>"; };
 		4F1BEDF154EF77908E410065 /* Backends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Backends.swift; sourceTree = "<group>"; };
 		5267AF95E90FDC18A5669002 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		5BBFC2BD746F5D8BA9936607 /* SelfTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelfTest.swift; sourceTree = "<group>"; };
 		6258C00F7C1A3481E17AF478 /* PixelImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelImage.swift; sourceTree = "<group>"; };
 		64EF75171D6181E98B371106 /* BestMoveAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BestMoveAttributes.swift; sourceTree = "<group>"; };
 		6FE9F79F765F7DE0602DBA4C /* EngineMove.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineMove.swift; sourceTree = "<group>"; };
 		7A8FC67118C7E88CDE96E72C /* SquareSignature.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquareSignature.swift; sourceTree = "<group>"; };
+		848489AE6BA9246ABC1C1C7E /* taketaketake-start.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "taketaketake-start.png"; sourceTree = "<group>"; };
 		93284D4CEC5594349AE37627 /* BoardPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardPalette.swift; sourceTree = "<group>"; };
 		93A7C26BF2E0E355E307A950 /* AnalyzeBoardIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeBoardIntent.swift; sourceTree = "<group>"; };
 		953DC257571787AE449C3A9B /* MoveGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoveGenerator.swift; sourceTree = "<group>"; };
@@ -136,6 +140,14 @@
 			path = Chess;
 			sourceTree = "<group>";
 		};
+		4CC9071415EB6B8F3D2A5EA6 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F22FEF74AB1DF176E3315BDD /* Fixtures */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		5CBCA421626FAC1CFD75F6F6 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
@@ -164,6 +176,7 @@
 				440122C1C88B7305D3982860 /* ContentView.swift */,
 				5267AF95E90FDC18A5669002 /* Info.plist */,
 				215D655E9AA76356472AF876 /* LiveActivityController.swift */,
+				5BBFC2BD746F5D8BA9936607 /* SelfTest.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -180,6 +193,7 @@
 			isa = PBXGroup;
 			children = (
 				88B321BD8C02B51DFC71DE7B /* App */,
+				4CC9071415EB6B8F3D2A5EA6 /* Resources */,
 				A8A70D8D7243E1054CD0DF2E /* Shared */,
 				5CBCA421626FAC1CFD75F6F6 /* Sources */,
 				CCD2506EB49E31A663FECCBA /* Widgets */,
@@ -203,6 +217,14 @@
 				CF03B244158F53C8CBA886BE /* ChessSenseWidgets.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F22FEF74AB1DF176E3315BDD /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				848489AE6BA9246ABC1C1C7E /* taketaketake-start.png */,
+			);
+			path = Fixtures;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -230,6 +252,7 @@
 			buildConfigurationList = FA615D61C4B32CA73D6C3967 /* Build configuration list for PBXNativeTarget "ChessSense" */;
 			buildPhases = (
 				3CD0C8877F8254E98D1DF255 /* Sources */,
+				4D643D503CF262842D217557 /* Resources */,
 				0517B65A95208F644BABF0BC /* Embed Foundation Extensions */,
 			);
 			buildRules = (
@@ -283,6 +306,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		4D643D503CF262842D217557 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A0CF18508ADF52C97D93832E /* taketaketake-start.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		3CD0C8877F8254E98D1DF255 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -308,6 +342,7 @@
 				8106FCDDA6F7767A73C28FB5 /* PixelImage.swift in Sources */,
 				7D97A9B666CA93D705C07993 /* PositionTracker.swift in Sources */,
 				7572C305006DDB3C7EE7F444 /* SAN.swift in Sources */,
+				A79AB63687AD06E4D452F17D /* SelfTest.swift in Sources */,
 				44325BBC67C44DED418CC778 /* Square.swift in Sources */,
 				BDDC6341A04710F744480308 /* SquareSignature.swift in Sources */,
 				0872C26298458859E8B1792E /* TemplateBook.swift in Sources */,

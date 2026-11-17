@@ -22,7 +22,7 @@ screenshot ──▶ locate board ──▶ classify 64 squares ──▶ FEN �
 | SAN generation | done, 10 notation tests |
 | Engine: Lichess cloud eval + Stockfish fallback + cache | done, payload-captured tests |
 | iOS app, Live Activity, App Intent | scaffolded, compiles in Xcode |
-| 43 unit tests | green |
+| 49 unit tests | green |
 
 ## Quick start
 
@@ -189,6 +189,39 @@ queen appears. `Side to move` is never read from pixels at all.
 
 Responses are cached per FEN, so recognising the same frame twice costs nothing.
 
+## The pixel path, tested without a phone
+
+`PixelMoveTests` takes the real screenshot, moves a piece **in the pixels**, re-reads the
+frame and lets the tracker name the move:
+
+```
+real screenshot ──▶ copy e2's pixels onto e4, repaint e2 flat ──▶ read ──▶ "e4"
+                                                                      ──▶ ep target e3
+```
+
+That covers `e4`, `a4`, and a two-ply `e4 e5` frame. It works because the board renders
+flat: a vacated square repainted with its palette colour is byte-identical to what the app
+draws.
+
+One measured constraint, worth knowing if you ever build a tighter crop: the board is
+1206 px over 8 columns, so columns are 150 or **151** px. A same-file move copies an
+exactly-sized block; a cross-file move would rescale the glyph by a pixel and no longer be
+a faithful render. The first attempt at a synthetic `b1→c3` read back at shape distance 59
+for exactly that reason, while the same knight reads at 0 in the original screenshot.
+
+## Self test on a device or simulator, without tapping
+
+Launch with `-chesssense-selftest` and the app runs the whole pipeline in-process — bundled
+screenshot, calibration, live engine call, ActivityKit — prints a report and shows it on
+screen:
+
+```bash
+xcrun simctl launch --console <udid> ai.chesssense.app -chesssense-selftest
+# or: Xcode → Scheme → Run → Arguments → add -chesssense-selftest
+```
+
+It uses its own `UserDefaults` suite, so it never disturbs a real calibration.
+
 ## Layout
 
 ```
@@ -226,7 +259,8 @@ Tests/ChessSenseCoreTests/  reader, rules, tracker, engine
 
 `./scripts/verify.sh` does both, and CI runs the same two steps:
 
-1. **`swift test`** — 44 tests: reader, perft-anchored rules, tracker, engine payloads.
+1. **`swift test`** — 49 tests: reader, perft-anchored rules, tracker, engine payloads, and
+   pixel-level move detection (below).
 2. **Full app build for arm64 device**, unsigned — app target *and* widget extension, so
    the SwiftUI views, the App Intent and the widget are all compiled, not just assumed.
    Both products come out as `ChessSense.app` with `ChessSenseWidgets.appex` embedded.

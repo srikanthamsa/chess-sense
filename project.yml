@@ -30,6 +30,8 @@ targets:
       # SwiftPM package: it keeps `swift test` authoritative for the algorithm while
       # avoiding a package graph in the Xcode project.
       - path: Sources/ChessSenseCore
+      - path: Resources/Fixtures
+        buildPhase: resources
     dependencies:
       - target: ChessSenseWidgets
         embed: true
