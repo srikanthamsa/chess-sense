@@ -13,6 +13,8 @@ public struct BoardRead: Sendable {
     /// Smallest colour margin across occupied squares. Low = ambiguous read.
     public let minColorMargin: Double
     public let signatures: [SquareSignature]
+    /// Which side was at the bottom of the screen when this was read.
+    public let orientation: BoardOrientation
 
     /// Gate for "would I bet a move on this read?".
     /// Every square already matched inside the book's tolerances to get here, so the
@@ -32,7 +34,9 @@ public enum BoardReader {
         guard let board = rect ?? BoardLocator.locate(image) else {
             throw BoardError.boardNotFound
         }
-        let sigs = SquareExtractor.extract(image: image, rect: board)
+        let palette = BoardPalette.estimate(image: image, rect: board)
+        let sigs = SquareExtractor.extract(image: image, rect: board, palette: palette)
+        let orientation = OrientationDetector.detect(image: image, rect: board, palette: palette)
 
         var pieces: [Piece] = []
         pieces.reserveCapacity(64)
@@ -54,6 +58,10 @@ public enum BoardReader {
             pieces.append(match.piece)
         }
 
+        // A flipped board is the same position rotated 180°: rotate the squares so every
+        // consumer downstream (tracker, engine, SAN) sees White at the bottom.
+        if orientation.isFlipped { pieces = rotated180(pieces) }
+
         return BoardRead(
             fen: FEN.encode(pieces),
             pieces: pieces,
@@ -61,7 +69,8 @@ public enum BoardReader {
             exactRate: Double(exact) / 64.0,
             worstShapeDistance: worst,
             minColorMargin: minMargin.isFinite ? minMargin : 1.0,
-            signatures: sigs
+            signatures: sigs,
+            orientation: orientation
         )
     }
 
@@ -77,11 +86,16 @@ public enum BoardReader {
         guard let board = rect ?? BoardLocator.locate(image) else {
             throw BoardError.boardNotFound
         }
-        let sigs = SquareExtractor.extract(image: image, rect: board)
-        let book = try TemplateBook.bootstrap(signatures: sigs, placement: placement)
+        let palette = BoardPalette.estimate(image: image, rect: board)
+        let sigs = SquareExtractor.extract(image: image, rect: board, palette: palette)
+        let orientation = OrientationDetector.detect(image: image, rect: board, palette: palette)
+        // If the calibration frame is shown from Black's side, the signatures are rotated
+        // relative to the standard placement array; rotate the expectation to match.
+        let aligned = orientation.isFlipped ? rotated180(placement) : placement
+        let book = try TemplateBook.bootstrap(signatures: sigs, placement: aligned)
         let verification = try read(image: image, book: book, rect: board)
 
-        let expected = FEN.encode(placement)
+        let expected = FEN.encode(aligned)
         let gotBoard = String(verification.fen.split(separator: " ")[0])
         let wantBoard = String(expected.split(separator: " ")[0])
         guard gotBoard == wantBoard else {
@@ -89,6 +103,14 @@ public enum BoardReader {
         }
         return (book, board, verification)
     }
+}
+
+/// Rotates a FEN-ordered 64-square array by 180°: both rank order and file order reverse.
+func rotated180(_ pieces: [Piece]) -> [Piece] {
+    precondition(pieces.count == 64)
+    var out = [Piece](repeating: .empty, count: 64)
+    for i in 0..<64 { out[63 - i] = pieces[i] }
+    return out
 }
 
 public enum FEN {
