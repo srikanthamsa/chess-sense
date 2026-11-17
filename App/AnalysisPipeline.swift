@@ -32,6 +32,8 @@ enum AnalysisPipeline {
         let pieceSymbol: String
         /// One short sentence for the Island. Never ellipsized: the length is bounded here.
         let tip: String
+        /// Where the time went, e.g. "read 28 · engine 96 · total 141 ms".
+        let timings: String
     }
 
     // MARK: - Analyse
@@ -52,6 +54,7 @@ enum AnalysisPipeline {
     ) async throws -> Outcome {
         guard let book = store.loadBook() else { throw BoardError.notCalibrated }
 
+        let readStart = Date()
         var read: BoardRead
         do {
             read = try BoardReader.read(image: image, book: book, rect: store.loadRect())
@@ -62,6 +65,7 @@ enum AnalysisPipeline {
             throw error
         }
 
+        let readMs = Date().timeIntervalSince(readStart)
         // A book learned from a screenshot cannot read a broadcast frame: different scale,
         // different rendering. Rather than making the user re-calibrate and retry, re-learn
         // the book from this very frame, anchored to the position we already know, and read
@@ -93,11 +97,13 @@ enum AnalysisPipeline {
                 explainedMove: nil,
                 playerEval: "",
                 pieceSymbol: "",
-                tip: ""
+                tip: "",
+                timings: ""
             )
         }
 
         // History supplies what a single frame cannot.
+        let trackStart = Date()
         var tracker = store.trackedFEN.flatMap(PositionTracker.init(fen:)) ?? PositionTracker()
         let before = tracker.position
         var sync = tracker.observe(read.pieces)
@@ -131,8 +137,10 @@ enum AnalysisPipeline {
             note = "position unchanged"
         }
 
+        let trackMs = Date().timeIntervalSince(trackStart)
         let position = tracker.position
 
+        let engineStart = Date()
         do {
             var move = try await cache.value(for: position.fen, chain: .default)
             var resolved: Move?
@@ -178,7 +186,10 @@ enum AnalysisPipeline {
                 } ?? "",
                 tip: explained.map {
                     MoveExplainer.islandTip(move: $0, in: position, evalText: move.evalText)
-                } ?? ""
+                } ?? "",
+                timings: describe(read: readMs, track: trackMs,
+                                  engine: Date().timeIntervalSince(engineStart),
+                                  total: Date().timeIntervalSince(readStart))
             )
         } catch {
             return Outcome(
@@ -194,7 +205,8 @@ enum AnalysisPipeline {
                 explainedMove: sync.lastMove,
                 playerEval: "",
                 pieceSymbol: "",
-                tip: ""
+                tip: "",
+                timings: ""
             )
         }
     }
@@ -211,6 +223,15 @@ enum AnalysisPipeline {
             image: image, placement: placement, rect: store.loadRect())
         try store.save(book: book, rect: rect)
         return try BoardReader.read(image: image, book: book, rect: rect)
+    }
+
+    /// Milliseconds, rounded, for the line the app shows. Cheap, and the only way to see
+    /// where a shutter-to-answer delay actually goes on the device.
+    private static func describe(read: TimeInterval, track: TimeInterval,
+                                 engine: TimeInterval, total: TimeInterval) -> String {
+        func ms(_ value: TimeInterval) -> Int { Int((value * 1000).rounded()) }
+        return "read \(ms(read)) · track \(ms(track)) · engine \(ms(engine)) "
+            + "· total \(ms(total)) ms"
     }
 
     // MARK: - Calibrate
@@ -248,7 +269,12 @@ enum AnalysisPipeline {
     /// coaching line in place when the language model answers. The move never waits on the
     /// model, and the model never supplies the move.
     static func analyzeAndPublish(imageData: Data) async throws -> Outcome {
+        // Bring the island up while the frame is being read, not after.
+        async let islandReady: Void = LiveActivityController.ensureRunning()
+        let started = Date()
         let outcome = try await analyze(imageData: imageData)
+        await islandReady
+        _ = started
 
         guard outcome.trusted, outcome.move != nil else {
             await LiveActivityController.update(nil, why: outcome.why,

@@ -345,9 +345,14 @@ struct ContentView: View {
                     subline = "Pick a starting-position screenshot first, so I know this board."
                     return
                 }
+                let started = Date()
                 let outcome = try await AnalysisPipeline.analyzeAndPublish(imageData: data)
+                let wall = Int(Date().timeIntervalSince(started) * 1000)
                 refresh()
                 present(outcome)
+                if !outcome.timings.isEmpty {
+                    detail = [outcome.timings, "wall \(wall) ms"].joined(separator: "\n")
+                }
             }
         } catch {
             headline = "Couldn't read"

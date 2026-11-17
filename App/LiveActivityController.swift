@@ -39,6 +39,14 @@ enum LiveActivityController {
         return true
     }
 
+    /// Starts the activity if it is not already live. Called concurrently with the analysis:
+    /// requesting an activity takes a round trip to the system, and the move should not wait
+    /// for it.
+    static func ensureRunning() async {
+        guard Activity<BestMoveAttributes>.activities.isEmpty else { return }
+        _ = try? start()
+    }
+
     static func end() async {
         for activity in Activity<BestMoveAttributes>.activities {
             await activity.end(nil, dismissalPolicy: .immediate)

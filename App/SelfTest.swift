@@ -22,6 +22,14 @@ enum SelfTest {
         let passed: Bool
     }
 
+    /// The bundled starting-position screenshot, as PNG data.
+    static func startScreenshot() -> Data {
+        guard let url = Bundle.main.url(forResource: "taketaketake-start", withExtension: "png"),
+              let data = try? Data(contentsOf: url)
+        else { return Data() }
+        return data
+    }
+
     static func run() async -> Report {
         var lines: [String] = []
         var passed = true
@@ -34,6 +42,16 @@ enum SelfTest {
                 passed = false
                 lines.append("FAIL  \(name): \(error)")
             }
+        }
+
+        // The shutter-to-answer budget, measured on this device. Printed first because it is
+        // the number the user feels.
+        await check("timing") {
+            let data = SelfTest.startScreenshot()
+            let started = Date()
+            let outcome = try await AnalysisPipeline.analyze(imageData: data)
+            let wall = Int(Date().timeIntervalSince(started) * 1000)
+            return "wall \(wall) ms · \(outcome.timings)"
         }
 
         let defaults = UserDefaults(suiteName: "chesssense.selftest") ?? .standard

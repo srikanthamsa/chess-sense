@@ -7,6 +7,10 @@ import Foundation
 /// speaks UCI over that pair. No network, no licence, no per-position cache miss: a
 /// middlegame position is answered in a couple of hundred milliseconds at depth 14.
 final class LocalStockfishBackend: EngineBackend, @unchecked Sendable {
+    /// One engine for the whole app. Booting is expensive and the search state is not
+    /// per-caller, so a fresh instance per query would pay the boot cost every time.
+    static let shared = LocalStockfishBackend(depth: 12)
+
     let name = "stockfish 11 · on device"
 
     private let depth: Int
@@ -30,6 +34,22 @@ final class LocalStockfishBackend: EngineBackend, @unchecked Sendable {
                 catch { continuation.resume(throwing: error) }
             }
         }
+    }
+
+    /// Boots the engine off the caller's thread.
+    ///
+    /// Called when the app launches and again when an intent starts, so the UCI handshake
+    /// (its own thread, ~50 ms, plus Stockfish's init) is already paid for by the time a
+    /// screenshot arrives. The shutter-to-answer delay is dominated by things like this that
+    /// happen once, not by the search.
+    func warmUp() {
+        queue.async {
+            try? withUnsafeMutablePointer(to: &self.started) { _ in _ = self.tryBoot() }
+        }
+    }
+
+    private func tryBoot() -> Bool {
+        do { try boot(); return true } catch { return false }
     }
 
     /// True once the engine has answered `uci`. Used by the status pane.
