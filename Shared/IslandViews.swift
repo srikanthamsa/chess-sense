@@ -528,26 +528,33 @@ public struct LockScreenCard: View {
     private var presentation: IslandPresentation { IslandPresentation(state) }
     private var accent: Color { IslandAccent.resolve(state) }
 
+    /// The system gives a Live Activity a fixed budget (about 160 pt tall). Anything taller is
+    /// clipped, and because the clipping happens outside the padding it reads as content
+    /// touching the top and bottom edges. Every row here is sized to fit that budget rather
+    /// than to look good at an arbitrary height: the old card wanted ~200 pt.
     public var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             header
 
-            HStack(alignment: .center, spacing: 10) {
+            HStack(alignment: .center, spacing: 8) {
                 if presentation == .rejected {
                     Text("Couldn't read")
-                        .font(.system(size: 26, weight: .semibold, design: .rounded))
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white.opacity(0.85))
+                        .lineLimit(1)
                 } else if presentation == .pending {
-                    SkeletonBar(width: 130, height: 30)
+                    SkeletonBar(width: 120, height: 26)
                 } else {
                     Text(state.displayMove)
-                        .font(.system(size: 32, weight: .semibold, design: .rounded))
-                        .tracking(-0.9)
+                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .tracking(-0.8)
                         .monospacedDigit()
                         .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
                 if presentation == .move {
-                    PieceBadge(symbol: state.pieceSymbol, accent: accent, diameter: 26)
+                    PieceBadge(symbol: state.pieceSymbol, accent: accent, diameter: 22)
                 }
                 EvalPill(evalText: state.youEval, trusted: state.trusted)
                 Spacer(minLength: 0)
@@ -555,16 +562,15 @@ public struct LockScreenCard: View {
 
             if presentation != .rejected,
                !state.youEval.trimmingCharacters(in: .whitespaces).isEmpty {
-                AdvantageBar(evalText: state.youEval, height: 5, tint: advantageTint(state.youEval))
+                AdvantageBar(evalText: state.youEval, height: 4, tint: advantageTint(state.youEval))
             }
 
             if !state.why.isEmpty, presentation == .move {
                 Text(state.why)
-                    .font(.system(size: 13.5, weight: .medium))
-                    .lineSpacing(1.5)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineSpacing(1.2)
                     .foregroundStyle(.white.opacity(0.8))
-                    .lineLimit(4)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2)
             }
 
             if presentation == .rejected {
@@ -575,10 +581,9 @@ public struct LockScreenCard: View {
                     .lineLimit(1)
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.top, 16)
-        // With the provenance row gone the card had no bottom breathing space left.
-        .padding(.bottom, 20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
         .accessibilityElement(children: .combine)
     }
 
