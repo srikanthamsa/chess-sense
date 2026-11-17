@@ -55,7 +55,9 @@ struct DesignStudioView: View {
     }
 
     var body: some View {
-        ScrollView {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            ScrollView {
             VStack(spacing: 26) {
                 Picker("Sample", selection: $sample) {
                     ForEach(Sample.allCases) { Text($0.label).tag($0) }
@@ -83,10 +85,10 @@ struct DesignStudioView: View {
                             .fill(Color(white: 0.09))
                     )
             }
-            .padding(20)
+                .padding(20)
+            }
         }
-        .background(Color(white: 0.04))
-        .preferredColorScheme(.dark)
+        .environment(\.colorScheme, .dark)
         .navigationTitle("Island studio")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -157,8 +159,8 @@ struct DesignStudioView: View {
             }
             IslandExpandedBottom(state: sample.state)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 42, style: .continuous)

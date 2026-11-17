@@ -1,8 +1,8 @@
 import SwiftUI
 
 public enum Island {
-    public static let moveSize: CGFloat = 34
-    public static let whySize: CGFloat = 13
+    public static let moveSize: CGFloat = 30
+    public static let whySize: CGFloat = 11.5
     public static let barHeight: CGFloat = 4
     public static let capsule = Color(red: 0.38, green: 0.84, blue: 0.56)
     public static let crimson = Color(red: 0.95, green: 0.45, blue: 0.45)
@@ -19,6 +19,17 @@ public enum IslandPresentation {
         if !state.trusted { self = .rejected }
         else if state.san.isEmpty || state.uci == "----" { self = .pending }
         else { self = .move }
+    }
+}
+
+extension String {
+    /// Clamped to one Island line without slicing a word in half.
+    var islandShort: String {
+        let limit = 52
+        guard count > limit else { return self }
+        let head = prefix(limit)
+        guard let cut = head.lastIndex(of: " ") else { return head + "…" }
+        return head[..<cut] + "…"
     }
 }
 
@@ -277,14 +288,14 @@ public struct IslandExpandedLeading: View {
                     .symbolEffect(.variableColor.iterative, options: .repeating)
                     .foregroundStyle(.white.opacity(0.7))
             } else if trusted {
-                CheckerMark(size: 4, gap: 3, tint: .white.opacity(0.85))
+                CheckerMark(size: 3.2, gap: 2.4, tint: .white.opacity(0.85))
             } else {
                 Image(systemName: "eye.slash.fill")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(.orange)
             }
         }
-        .frame(width: 24, height: 24)
+        .frame(width: 18, height: 18)
     }
 }
 
@@ -300,7 +311,7 @@ public struct IslandExpandedMove: View {
             SkeletonBar()
         case .rejected:
             Text("Couldn't read")
-                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.85))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -338,50 +349,34 @@ public struct IslandExpandedBottom: View {
     let state: BestMoveAttributes.ContentState
     public init(state: BestMoveAttributes.ContentState) { self.state = state }
 
-    public var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            if presentation != .rejected {
-                AdvantageBar(evalText: state.youEval)
-            }
-
-            Text(detailText)
-                .font(.system(size: Island.whySize, weight: .medium))
-                .lineSpacing(1.5)
-                .foregroundStyle(.white.opacity(state.why.isEmpty ? 0.5 : 0.8))
-                .lineLimit(3)
-                .minimumScaleFactor(0.9)
-                .fixedSize(horizontal: false, vertical: true)
-                .contentTransition(.opacity)
-                .animation(.easeOut(duration: 0.3), value: detailText)
-
-            Text(footerText)
-                .font(.system(size: 9.5, weight: .semibold))
-                .tracking(0.7)
-                .foregroundStyle(.white.opacity(0.32))
-                .lineLimit(1)
-        }
-    }
-
     private var presentation: IslandPresentation { IslandPresentation(state) }
+
+    /// Exactly one line, clamped at a word boundary.
+    ///
+    /// Three lines of prose turned the Island into a notification banner: it grew over the
+    /// host app's header and clipped inside its own corner curve. The Island is a glance. The
+    /// full sentence lives on the lock screen, where there is room for it.
+    public var body: some View {
+        Text(detailText)
+            .font(.system(size: Island.whySize, weight: .medium))
+            .foregroundStyle(.white.opacity(0.72))
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentTransition(.opacity)
+            .animation(.easeOut(duration: 0.25), value: detailText)
+    }
 
     private var detailText: String {
         switch presentation {
         case .rejected:
-            return "The board was covered or the position was mid-animation. Try again."
+            return "Couldn't read the board — move again"
         case .pending:
             return "Reading the board…"
         case .move:
-            if !state.why.isEmpty { return state.why }
-            if !state.principalVariation.isEmpty { return state.principalVariation }
-            return ""
-        }
-    }
-
-    private var footerText: String {
-        switch presentation {
-        case .rejected: return "NOTHING SHOWN · MOVE AGAIN TO RETRY"
-        case .pending: return state.provenance.uppercased()
-        case .move: return state.provenance.uppercased()
+            if !state.why.isEmpty { return state.why.islandShort }
+            if !state.principalVariation.isEmpty { return state.principalVariation.islandShort }
+            return state.provenance
         }
     }
 }

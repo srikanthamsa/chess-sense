@@ -21,7 +21,6 @@ struct BestMoveLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     IslandExpandedBottom(state: context.state)
-                        .padding(.top, 2)
                 }
             } compactLeading: {
                 IslandCompactLeading(trusted: context.state.trusted)
