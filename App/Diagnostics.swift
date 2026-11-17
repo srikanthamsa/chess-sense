@@ -10,6 +10,12 @@ import Foundation
 enum Diagnostics {
     private static let keep = 6
 
+    /// Continuous mode can fail on every streamed frame (a system sheet, a loading screen).
+    /// Writing a PNG per attempt would churn the disk and tell us nothing new, so at most
+    /// one frame every 30 seconds is kept.
+    private static var lastWrite = Date.distantPast
+    private static let minimumInterval: TimeInterval = 30
+
     static var directory: URL {
         let base = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return base.appendingPathComponent("chesssense-frames", isDirectory: true)
@@ -22,6 +28,9 @@ enum Diagnostics {
         book: TemplateBook?,
         rectOverride: BoardRect? = nil
     ) -> URL? {
+        if Date().timeIntervalSince(lastWrite) < minimumInterval { return nil }
+        lastWrite = Date()
+
         let fm = FileManager.default
         try? fm.createDirectory(at: directory, withIntermediateDirectories: true)
 

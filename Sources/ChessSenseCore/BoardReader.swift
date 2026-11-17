@@ -34,7 +34,12 @@ public enum BoardReader {
         book: TemplateBook,
         rect: BoardRect? = nil
     ) throws -> BoardRead {
-        guard let board = rect ?? BoardLocator.locate(image) else {
+        // A supplied rect is a fast path, not an authority. Broadcast frames arrive at half
+        // resolution, so a rect learned from a full-resolution screenshot indexes past the
+        // end of the pixel buffer -- that crashed the app on the first streamed frame.
+        // Accept it only when it still fits this image; otherwise locate the board again.
+        let supplied = rect.flatMap { fits($0, in: image) ? $0 : nil }
+        guard let board = supplied ?? BoardLocator.locate(image) else {
             throw BoardError.boardNotFound
         }
         let palette = BoardPalette.estimate(image: image, rect: board)
@@ -90,12 +95,33 @@ public enum BoardReader {
     /// (the standard start position by default) and verifies the book by re-reading
     /// the same frame. A broken theme, a mid-animation frame or the wrong position
     /// throws here rather than producing a silently wrong book.
+    /// Whether a rectangle can be sampled from this image without leaving it.
+    ///
+    /// Square-ness is checked too: a scaled image with a stale rect is usually still
+    /// in-bounds vertically and hugely wrong horizontally, and sampling that produces
+    /// nonsense signatures instead of a clean rejection.
+    public static func fits(_ rect: BoardRect, in image: PixelImage) -> Bool {
+        let slack = 8
+        guard rect.width >= 64, rect.height >= 64,
+              rect.x >= -slack, rect.y >= -slack,
+              rect.x + rect.width <= image.width + slack,
+              rect.y + rect.height <= image.height + slack
+        else { return false }
+        let longer = Double(max(rect.width, rect.height))
+        return Double(abs(rect.width - rect.height)) <= longer * 0.06
+    }
+
     public static func calibrate(
         image: PixelImage,
         placement: [Piece] = TemplateBook.standardStartPlacement,
         rect: BoardRect? = nil
     ) throws -> (book: TemplateBook, rect: BoardRect, verification: BoardRead) {
-        guard let board = rect ?? BoardLocator.locate(image) else {
+        // A supplied rect is a fast path, not an authority. Broadcast frames arrive at half
+        // resolution, so a rect learned from a full-resolution screenshot indexes past the
+        // end of the pixel buffer -- that crashed the app on the first streamed frame.
+        // Accept it only when it still fits this image; otherwise locate the board again.
+        let supplied = rect.flatMap { fits($0, in: image) ? $0 : nil }
+        guard let board = supplied ?? BoardLocator.locate(image) else {
             throw BoardError.boardNotFound
         }
         let palette = BoardPalette.estimate(image: image, rect: board)

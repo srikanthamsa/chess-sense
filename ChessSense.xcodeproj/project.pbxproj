@@ -45,8 +45,10 @@
 		545DB09A4B9CF9A4A0255FBD /* bitbase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BA68ECD395C05A60F94EA65E /* bitbase.cpp */; };
 		5500F1DD88363E199F3A6779 /* misc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4014C940C72AF8BF06C38F77 /* misc.cpp */; };
 		553442D590733B1BB78A41B8 /* PlayfairDisplay-Italic-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FCE6066FF2524D3918872B77 /* PlayfairDisplay-Italic-Variable.ttf */; };
+		556D3CADB9257A6F2FD0857A /* Info 3.plist in Resources */ = {isa = PBXBuildFile; fileRef = AE158FA354DAB300033EE583 /* Info 3.plist */; };
 		5AC3319463D4424D26FF9F44 /* EngineProbeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC64E0070A696518E70FA822 /* EngineProbeView.swift */; };
 		612CE687BB39401DD6308B4C /* DeepSeekCoach.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74A8E4086EBCF38DFA3B309C /* DeepSeekCoach.swift */; };
+		6733783B1B9ADA35082F2524 /* Info 2.plist in Resources */ = {isa = PBXBuildFile; fileRef = FB1FB4B08E8DC8945998B425 /* Info 2.plist */; };
 		67E94DD2D18A937CF0531884 /* ContinuousMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05DA87845331E93761FC4C4A /* ContinuousMode.swift */; };
 		692B6E203FF1FE98F99A2AD6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8705F6E1E86C249571D88DE7 /* Assets.xcassets */; };
 		69754A83F50A3D6D99CDE111 /* AppGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF402E798915725726C85D4 /* AppGroup.swift */; };
@@ -212,6 +214,7 @@
 		9CA8EEF7F8E0173678EB34A1 /* Move.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Move.swift; sourceTree = "<group>"; };
 		A14BFDCCA1FF29026E60167F /* timeman.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = timeman.cpp; sourceTree = "<group>"; };
 		A7D59053D9742298C766F843 /* ucioption.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ucioption.cpp; sourceTree = "<group>"; };
+		AE158FA354DAB300033EE583 /* Info 3.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Info 3.plist"; sourceTree = "<group>"; };
 		AECE63425CAEDB46756DC219 /* bitboard.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = bitboard.cpp; sourceTree = "<group>"; };
 		AED9DD81821BAF34A5F63B52 /* tt.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = tt.cpp; sourceTree = "<group>"; };
 		B70643FC2C06323B75206E21 /* README-chesssense.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "README-chesssense.md"; sourceTree = "<group>"; };
@@ -242,6 +245,7 @@
 		F1EA1750998D76AC4ED71227 /* material.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = material.h; sourceTree = "<group>"; };
 		F46FCB1BCD80699F224B1005 /* pawns.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = pawns.cpp; sourceTree = "<group>"; };
 		F99C1C7689BF5E07BD9B73A7 /* APIKeyStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeyStore.swift; sourceTree = "<group>"; };
+		FB1FB4B08E8DC8945998B425 /* Info 2.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "Info 2.plist"; sourceTree = "<group>"; };
 		FC64E0070A696518E70FA822 /* EngineProbeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineProbeView.swift; sourceTree = "<group>"; };
 		FCE6066FF2524D3918872B77 /* PlayfairDisplay-Italic-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlayfairDisplay-Italic-Variable.ttf"; sourceTree = "<group>"; };
 		FF95840337F203E8B06EB712 /* thread_win32_osx.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = thread_win32_osx.h; sourceTree = "<group>"; };
@@ -403,6 +407,7 @@
 				00FC3DFC1B7E50162BD3B068 /* Diagnostics.swift */,
 				FC64E0070A696518E70FA822 /* EngineProbeView.swift */,
 				44C57CFE88707DD9FF943122 /* Info 2.plist */,
+				AE158FA354DAB300033EE583 /* Info 3.plist */,
 				5267AF95E90FDC18A5669002 /* Info.plist */,
 				215D655E9AA76356472AF876 /* LiveActivityController.swift */,
 				0B25E9E80CC1CE22B767CC8D /* LocalStockfishBackend.swift */,
@@ -452,6 +457,7 @@
 			isa = PBXGroup;
 			children = (
 				E809E3AE642D26B99C001B58 /* BestMoveWidgets.swift */,
+				FB1FB4B08E8DC8945998B425 /* Info 2.plist */,
 				05DF3FEF2103FB5450D2FFB8 /* Info.plist */,
 			);
 			path = Widgets;
@@ -521,6 +527,7 @@
 			buildConfigurationList = 0F76C82B2670E8B452486999 /* Build configuration list for PBXNativeTarget "ChessSenseWidgets" */;
 			buildPhases = (
 				9826D8B659D84DFD9E55CDB4 /* Sources */,
+				0E483A7DD0E3B9ADE6DF0D56 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -622,12 +629,21 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		0E483A7DD0E3B9ADE6DF0D56 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6733783B1B9ADA35082F2524 /* Info 2.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4D643D503CF262842D217557 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				692B6E203FF1FE98F99A2AD6 /* Assets.xcassets in Resources */,
 				B16AA8DB30BE745B5D24BE19 /* Info 2.plist in Resources */,
+				556D3CADB9257A6F2FD0857A /* Info 3.plist in Resources */,
 				B0F83368E8021A7384E481D4 /* InstrumentSerif-Italic.ttf in Resources */,
 				2F5A6195FCF8E912305B5463 /* InstrumentSerif-Regular.ttf in Resources */,
 				553442D590733B1BB78A41B8 /* PlayfairDisplay-Italic-Variable.ttf in Resources */,
@@ -783,7 +799,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Broadcast/ChessSenseBroadcast.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEAD_CODE_STRIPPING = NO;
 				DEVELOPMENT_TEAM = XKAAC8TL59;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -808,7 +824,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = 2;
@@ -839,7 +855,7 @@
 				CODE_SIGN_ENTITLEMENTS = App/ChessSense.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = 2;
@@ -990,7 +1006,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Broadcast/ChessSenseBroadcast.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEAD_CODE_STRIPPING = NO;
 				DEVELOPMENT_TEAM = XKAAC8TL59;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -1015,7 +1031,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++11";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = 2;
@@ -1067,7 +1083,7 @@
 				CODE_SIGN_ENTITLEMENTS = App/ChessSense.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				GCC_ENABLE_CPP_EXCEPTIONS = NO;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_OPTIMIZATION_LEVEL = 2;

@@ -221,3 +221,37 @@ final class BoardReaderTests: XCTestCase {
         )
     }
 }
+
+/// A broadcast frame arrives at half resolution while the stored rectangle was learned from a
+/// full-resolution screenshot. That mismatch used to index past the pixel buffer and crash.
+final class StaleRectTests: XCTestCase {
+    private func image(_ name: String) throws -> PixelImage {
+        let url = try XCTUnwrap(
+            Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Fixtures")
+        )
+        return try XCTUnwrap(PixelImage(contentsOf: url))
+    }
+
+    func testFullScaleRectRejectedOnHalfScaleImage() throws {
+        let full = try image("taketaketake-start")
+        let rect = try XCTUnwrap(BoardLocator.locate(full))
+        XCTAssertTrue(BoardReader.fits(rect, in: full))
+
+        let half = try full.scaled(by: 0.5)
+        XCTAssertFalse(BoardReader.fits(rect, in: half), "a stale rect must not be trusted")
+    }
+
+    func testReadingAHalfScaleFrameDoesNotCrash() throws {
+        let full = try image("taketaketake-start")
+        let (book, rect, _) = try BoardReader.calibrate(image: full)
+        let half = try full.scaled(by: 0.5)
+
+        // Must either read the board at its new size or refuse -- never index out of bounds.
+        do {
+            let read = try BoardReader.read(image: half, book: book, rect: rect)
+            XCTAssertFalse(read.fen.isEmpty)
+        } catch {
+            XCTAssertTrue(error is BoardError, "unexpected error: \(error)")
+        }
+    }
+}

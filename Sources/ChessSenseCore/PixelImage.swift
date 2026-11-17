@@ -65,7 +65,36 @@ public struct PixelImage: Sendable {
     }
 
     @inline(__always)
-    public func offset(_ x: Int, _ y: Int) -> Int { (y * width + x) * 4 }
+    /// Nearest-neighbour downscale, used to simulate a broadcast frame arriving at a lower
+    /// resolution than the screenshot the board rectangle was learned from.
+    public func scaled(by factor: Double) -> PixelImage {
+        let newWidth = max(1, Int(Double(width) * factor))
+        let newHeight = max(1, Int(Double(height) * factor))
+        var out = [UInt8](repeating: 255, count: newWidth * newHeight * 4)
+        for y in 0..<newHeight {
+            let sy = min(height - 1, Int(Double(y) / factor))
+            for x in 0..<newWidth {
+                let sx = min(width - 1, Int(Double(x) / factor))
+                let src = offset(sx, sy)
+                let dst = (y * newWidth + x) * 4
+                out[dst] = rgba[src]
+                out[dst + 1] = rgba[src + 1]
+                out[dst + 2] = rgba[src + 2]
+                out[dst + 3] = rgba[src + 3]
+            }
+        }
+        return PixelImage(width: newWidth, height: newHeight, rgba: out)
+    }
+
+    public func offset(_ x: Int, _ y: Int) -> Int {
+        // Clamped on purpose. Callers work inside a validated rectangle, but a stale
+        // rectangle against a smaller image (a broadcast frame at half resolution) used to
+        // index past the buffer and take the whole app down. A repeated edge pixel is a
+        // wrong answer; a crash is not an answer.
+        let cx = min(max(0, x), max(0, width - 1))
+        let cy = min(max(0, y), max(0, height - 1))
+        return (cy * width + cx) * 4
+    }
 
     /// PNG encoding, so a failing frame can be captured on device and reproduced offline.
     public func pngData() -> Data? {
