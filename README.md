@@ -1,335 +1,103 @@
-# chess-sense
+<div align="center">
 
-Read the chess board off a screen, find the best move, show it in the Dynamic Island.
+# chess-sense — the best move, above the board
 
-Built for one game and one board: **TakeTakeTake** on iPhone. It is deliberately *not*
-a general chess-OCR engine — see [Why not a general recognizer](#why-not-a-general-recognizer).
+**Reads a chess board straight off the screen and puts Stockfish's best move in the Dynamic Island.
+No servers, no accounts, no cloud engine — the search runs on the phone.**
 
-```
-screenshot ──▶ locate board ──▶ classify 64 squares ──▶ FEN ──▶ engine ──▶ Dynamic Island
-              (pixel scan)      (template match)              (cloud eval)     (Live Activity)
-```
+![iOS](https://img.shields.io/badge/iOS%2017%2B-iphone-000000?logo=apple&logoColor=white)
+![Engine](https://img.shields.io/badge/engine-Stockfish%2011%20%C2%B7%20on%20device-success)
+![Surface](https://img.shields.io/badge/surface-Live%20Activity%20%2F%20Dynamic%20Island-8A2BE2)
+![Offline](https://img.shields.io/badge/network-none%20required-blue)
 
-## Status
+[**How it works**](#how-it-works) · [**What works**](#what-works) · [**Limits**](#limits) · [**Credits**](#credits)
 
-| Piece | State |
+<img src="docs/img/app.jpg" alt="chess-sense showing the best move, the position it read, and a plain-English reason" width="360">
+
+</div>
+
+> [!NOTE]
+> chess-sense is a companion for the **TakeTakeTake** chess app on iOS. It is not affiliated with
+> TakeTakeTake, chess.com or lichess. You supply your own board and your own game.
+
+> [!IMPORTANT]
+> **Everything happens on the phone.** The board is read from pixels, the move is searched on-device,
+> and nothing is uploaded. The only optional network call is a language model you explicitly key in, and
+> the app works fully without it.
+
+## What this is
+
+You screenshot the board. Half a second later the Dynamic Island is showing the move — in large
+notation, with how you stand, and one sentence in plain English explaining *why*, with no chess
+notation in it.
+
+It is not a cloud service wearing an app's clothes. The reader is a small, self-checking vision
+pipeline; the engine is Stockfish compiled into the app; the surface is a Live Activity, so the move
+stays visible while you are looking at the game rather than the app.
+
+## What works
+
+| | Status |
 |---|---|
-| Board locator | works on TakeTakeTake screenshots |
-| Square classifier | reads the starting position exactly, 13/13 templates learned from one frame |
-| Template calibration | self-verifying; rejects frames that disagree with the expected position |
-| Chess rules module (move gen, legality, castling, ep, promotion) | done, anchored by perft |
-| Move diffing + castling / en passant / turn tracking | done, 9 tracker tests |
-| SAN generation | done, 10 notation tests |
-| Engine: Lichess cloud eval + Stockfish fallback + cache | done, payload-captured tests |
-| iOS app, Live Activity, App Intent | scaffolded, compiles in Xcode |
-| 49 unit tests | green |
+| Read a board from a screenshot | Verified on real games, ~30 positions |
+| Learn a new board theme from one frame | Self-verifying: a bad calibration is refused |
+| Move generation, legality, SAN | Anchored against perft (start, Kiwipete, P3) |
+| Stockfish 11, on-device, no network | ~100 ms at depth 12 in the middlegame |
+| Best move in the Live Activity | Move, evaluation, plain-English reason |
+| Plain-English coaching, no notation | On-device, plus optional model-written wording |
+| Handles a board drawn from Black's side | Orientation read from the board's own labels |
+| Silence when the read is uncertain | A refused read beats a confident wrong move |
+| Answer time, shutter to Island | About half a second, mostly the pixel read |
 
-## Quick start
+<div align="center">
 
-```bash
-swift test                                   # 13 tests, no Xcode session needed
-swift run chesssense-diag <screenshot.png>   # dump board rect, palette, per-square stats, FEN
-./scripts/verify.sh                          # tests + iOS-SDK typecheck of the app layer
-```
+<img src="docs/img/island.jpg" alt="Dynamic Island, compact and expanded, plus the lock-screen card" width="620">
 
-The test fixture is a real TakeTakeTake screenshot (`Tests/ChessSenseCoreTests/Fixtures/`).
+</div>
 
-## Running it on a phone
+## How to use it
 
-```bash
-xcodegen generate          # project.yml -> ChessSense.xcodeproj
-open ChessSense.xcodeproj
-```
-
-1. Set your team on both targets, run on the device.
-2. Screenshot a **fresh game** in TakeTakeTake, tap *Pick starting-position screenshot*.
-   It calibrates and verifies in one step; you should see `Calibrated ✓`.
-3. *Start Live Activity* — the Island shows `----` waiting state.
-4. In **Shortcuts**, build: `Take Screenshot` → `Best Move` (the app's intent).
-   Bind it to the Action Button or Back Tap. Screenshot mid-game, the move appears.
-
-The Dynamic Island shows **SAN** (`Nf3`, `Qxd5+`, `O-O`), falling back to `from–to` if the
-engine's move somehow isn't legal in the tracked position.
+1. **Calibrate once.** Start a fresh game, screenshot the starting position, pick it in the app.
+   One frame teaches it every piece; the app then reads the position back and checks its own work.
+2. **Play.** Screenshot whenever you want a move. Wire it to **Back Tap** or the **Action Button**
+   through Shortcuts and it becomes a single tap on the back of the phone.
+3. **Look at the Island.** The move, your standing, and the reason. Long-press to expand.
 
 ## How it works
 
-### 1. Find the board — no detector needed
-
-`BoardLocator` scans row and column density for board-coloured pixels
-(neither near-black UI chrome nor near-white pieces; blue-dominant) and takes the longest
-contiguous run. The board is the only element that produces a long run of mostly
-board-coloured rows, so avatars and lavender buttons can't corrupt the result.
-
-On the fixture this returns `(x: 0, y: 684, w: 1206, h: 1206)` — full-bleed width,
-square, `150.75 px` per square. No perspective, no scaling, no lighting.
-
-### 2. Call it a checkerboard
-
-`BoardPalette` estimates the light and dark square colours from the medoid of each
-checkerboard parity, then assigns each square's background **by `(rank + file) % 2`**.
-
-This is the single most important design decision. Inferring a square's background from
-its own contents fails: a detail-heavy glyph can own the largest flat area inside its
-square and hijack the colour mode. Measured, that inverts the white/black signal for
-knights, queens and kings (bright fraction 0.00 where it should be ~0.70 and vice versa).
-
-Pinning background to the checkerboard structure also makes last-move and check tints a
-non-issue: a tint moves a square a few tens of RGB units, so it is still closer to its
-palette colour than to the other one, and the tinted value is used as the background.
-
-### 3. Two channels, in order of discriminative power
-
-Per square, relative to that square's background:
-
-| Channel | Representation | Separates |
-|---|---|---|
-| **shape** | 16×16 coverage bitmap → 256 bits | piece type |
-| **bright fraction** | share of ink pixels lighter than bg + 0.15 | piece colour |
-
-Both are needed, and the measurements say why:
-
-- White rook vs black rook: `shapeDistance = 0`, `colorDistance = 0.49`.
-  **Identical silhouettes.** Shape alone cannot tell them apart — a shape-only classifier
-  reports a black rook as a white rook.
-- Same piece on a light vs a dark square: `shapeDistance ≤ 4`, `colorDistance ≤ 0.03`.
-  The signal survives the square's colour.
-
-Colour is measured as "how much of this glyph is brighter than the board", which is what
-a human reads. Mean, mode and percentile luma of the whole ink mask all fail here because
-the anti-aliasing band where the glyph meets the board drifts by up to 0.19 between square
-colours and dominates the pixel count.
-
-Classification narrows by shape (within a tolerance band), then discriminates by bright
-fraction. A square that matches nothing is **rejected**, never guessed.
-
-### 4. Calibration is one screenshot
-
-`BoardReader.calibrate` learns 13 templates (6 pieces × 2 colours + empty) from a single
-frame of a **known** position — the starting position, which conveniently contains all 13
-classes. Squares sharing a piece are sub-clustered, so a piece that renders differently on
-light vs dark squares gets two templates instead of one smeared average.
-
-It then **re-reads the frame and requires the expected position back**. Wrong theme,
-mid-animation frame, or a finished game fails loudly instead of baking a broken book:
-
-```swift
-let (book, rect, verification) = try BoardReader.calibrate(image: shot)
-// verification.fen == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-// book.entries.count == 13, supports 32/8/8/2/2/2/2/1/1/1/1...
-```
-
-Measured on the fixture: worst shape distance 5, minimum colour margin 0.43.
-
-## Why not a general recognizer
-
-[chessvision.ai](https://chessvision.ai/) is the reference implementation and worth
-studying. Its author splits the problem into board detection (custom skeleton + graph
-algorithm, the hard part, paper-worthy) and per-square classification (transformer-free
-CNNs, type then colour), and states the accuracy floor plainly: 0.99 per square still means
-`0.99^64 ≈ 0.52` per board, so you need better than 0.999.
-
-That floor applies to *arbitrary* input — book photos, tilted magazine shots, YouTube
-frames with arrows drawn on them. This app's input is one app's canvas at one fixed rect,
-with no compression and no perspective, so the piece renders are byte-identical frame to
-frame. Substituting a structural prior and a locked theme buys accuracy that a general
-model has to earn with a dataset, and skips the detector entirely.
-
-The discipline worth copying is the reject path: never emit a move from a low-confidence
-read.
-
-## Rules, tracking and notation
-
-### The rules module
-
-Finding the best move is worthless if the FEN is wrong, so the core owns a complete chess
-rules implementation: move generation, legality (pins and checks), castling, en passant,
-promotion, castling-right bookkeeping, FEN round-trip and SAN.
-
-It is anchored to published **perft** counts, which is the cheapest honest proof a move
-generator is correct:
-
-| Position | Depth 1 | 2 | 3 |
-|---|---|---|---|
-| start | 20 | 400 | 8,902 |
-| Kiwipete `r3k2r/p1ppqpb1/...` | 48 | 2,039 | — |
-| P3 `8/2p5/3p4/KP5r/...` | 14 | 191 | 2,812 |
-
-**Why not ChessKit:** SAN needs full legal-move generation for disambiguation, check and
-mate — the same machinery move diffing needs. A package dependency can't resolve in this
-project's Xcode targets here either (SwiftPM's manifest cache is outside the writable
-sandbox), so one self-contained module that serves both jobs beats a dependency that
-serves one.
-
-### Tracking is how a FEN gets its other five fields
-
-A screenshot is 64 piece placements. A FEN needs six fields. The other five come from
-**history**, which is strictly more reliable than inferring them from pixels:
-
-```
-observed 64 squares ──▶ find the legal move(s) that reach them
-                        ├─ exactly one 1-ply move      → apply, advance turn
-                        ├─ exactly one 2-ply sequence  → a frame was missed; apply both
-                        └─ nothing explains it         → resync: adopt the board,
-                                                         rebuild castling from piece
-                                                         placement, drop ep
-```
-
-Every special case falls out of move generation instead of being special-cased by hand:
-castling arrives as one ply because the rook leg is in the diff, en passant because the
-captured pawn is not on the destination square, promotion because a pawn disappears and a
-queen appears. `Side to move` is never read from pixels at all.
-
-### Engine
-
-`EngineChain` tries backends in order and reports every reason if all fail:
-
-1. **Lichess cloud eval** — keyless, instant, depth 30–75 for positions someone has already
-   analysed. ~85% of real games.
-2. **stockfish.online** — covers the rest.
-
-Responses are cached per FEN, so recognising the same frame twice costs nothing.
-
-## The pixel path, tested without a phone
-
-`PixelMoveTests` takes the real screenshot, moves a piece **in the pixels**, re-reads the
-frame and lets the tracker name the move:
-
-```
-real screenshot ──▶ copy e2's pixels onto e4, repaint e2 flat ──▶ read ──▶ "e4"
-                                                                      ──▶ ep target e3
-```
-
-That covers `e4`, `a4`, and a two-ply `e4 e5` frame. It works because the board renders
-flat: a vacated square repainted with its palette colour is byte-identical to what the app
-draws.
-
-One measured constraint, worth knowing if you ever build a tighter crop: the board is
-1206 px over 8 columns, so columns are 150 or **151** px. A same-file move copies an
-exactly-sized block; a cross-file move would rescale the glyph by a pixel and no longer be
-a faithful render. The first attempt at a synthetic `b1→c3` read back at shape distance 59
-for exactly that reason, while the same knight reads at 0 in the original screenshot.
-
-## Self test on a device or simulator, without tapping
-
-Launch with `-chesssense-selftest` and the app runs the whole pipeline in-process — bundled
-screenshot, calibration, live engine call, ActivityKit — prints a report and shows it on
-screen:
-
-```bash
-xcrun simctl launch --console <udid> ai.chesssense.app -chesssense-selftest
-# or: Xcode → Scheme → Run → Arguments → add -chesssense-selftest
-```
-
-It uses its own `UserDefaults` suite, so it never disturbs a real calibration.
-
-## Layout
-
-```
-Sources/ChessSenseCore/
-  PixelImage.swift      RGBA raster decode + RGB type
-  BoardLocator.swift    board rect + square geometry
-  BoardPalette.swift    checkerboard palette, per-square background
-  SquareSignature.swift shape bits + bright fraction
-  TemplateBook.swift    calibration, clustering, two-stage classify
-  BoardReader.swift     image -> 64 squares -> FEN, self-verifying calibration
-  Piece.swift           pieces, errors
-  Chess/                squares, moves, position, move generation, SAN, tracker
-  Engine/               backends, fallback chain, cache
-App/                    pipeline, Live Activity, App Intent, calibration UI
-Widgets/                Dynamic Island / lock-screen activity
-Shared/                 activity attributes (compiled into app + extension)
-Sources/chesssense-diag/  CLI diagnostics: rect, palette, per-square stats, FEN
-Tests/ChessSenseCoreTests/  reader, rules, tracker, engine
-```
-
-## Roadmap
-
-- [x] iOS app target + calibration from one screenshot
-- [x] Live Activity / Dynamic Island rendering of the best move
-- [x] App Intent so the Action Button (or a Shortcut) triggers a background analyze
-- [x] Engine: Lichess cloud eval (no key)
-- [x] Fallback engine: stockfish.online
-- [x] SAN via an in-house rules module, anchored by perft
-- [x] Move diffing + castling / en-passant / turn tracking
-- [ ] On-device fallback engine (Stockfish binary) for fully offline operation
-- [ ] Optional: raw ReplayKit frames for continuous updates
-- [ ] Optional: DeepSeek for a one-line "why" in the expanded Island view
-
-## Verification status
-
-`./scripts/verify.sh` does both, and CI runs the same two steps:
-
-1. **`swift test`** — 49 tests: reader, perft-anchored rules, tracker, engine payloads, and
-   pixel-level move detection (below).
-2. **Full app build for arm64 device**, unsigned — app target *and* widget extension, so
-   the SwiftUI views, the App Intent and the widget are all compiled, not just assumed.
-   Both products come out as `ChessSense.app` with `ChessSenseWidgets.appex` embedded.
-
-Note for anyone building from a restricted shell: SwiftUI's `@State` needs
-`swift-plugin-server`, which is itself sandboxed, so it fails with `sandbox_apply: Operation
-not permitted` / `produced malformed response`. Passing
-`OTHER_SWIFT_FLAGS='-disable-sandbox'` fixes it. Xcode's UI does not need this.
-
-### Verified on iOS
-
-`./scripts/run-on-device.sh` and `-chesssense-selftest` run the real binary end to end with
-no taps. On iOS 27.2 (simulator, Xcode 27.2):
-
-```
-SELFTEST RESULT PASSED
-PASS  bundle fixture: taketaketake-start.png, 582389 bytes
-PASS  calibrate (13 templates, self-verifying): worst shape 5, colour margin 0.43, trusted yes
-PASS  tracker bootstrap: book + rect persisted (1206x1206)
-PASS  analyse + live engine + SAN: e4 +0.19 · lichess cloud · d75 · pv e4 e5 Nf3 Nc6 Bc4
-PASS  tracked position advanced: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
-INFO  live activity: started and updated
-```
-
-That covers the reader, the rules, the network engine and ActivityKit inside the shipping
-binary. `docs/simulator-selftest.png` is the screen it produces.
-
-**Confirmed working on the device**: screenshot → live engine → SAN in the Dynamic Island,
-triggered from a Shortcut. Getting there took three real-game failures, each now a fixture
-and a test:
-
-| Symptom | Cause |
-|---|---|
-| `no template matched e7` (59) | locator clipped the outer ranks: 1174 px rect for a 1206 px board |
-| `no template matched e7` (59) | highlight on a **dark** square moves 91 RGB units; the rule allowed 60 |
-| `no template matched f6` (59) | an oversized knight owned the square's border ring, so the piece became the background |
-
-All three were the same underlying question — *what colour is this square?* — answered three
-different ways. It is now answered by candidates (ring + four corners), filtered by "could
-this be a piece fill", picked by distance to the palette. A glyph is centred, so a corner is
-always pure square. A signed build also needs an **Xcode developer
-account** — being signed in to the system Apple Account is not sufficient; Xcode's account
-list must contain the Apple ID, and `xcodebuild` reports `No Accounts` when it doesn't.
-
-## Notes
-
-- If a frame can't be explained by legal play the tracker resyncs rather than guessing. A
-  board that turns out to be the starting position is treated as a fresh game (White to
-  move, all castling rights); any other resync keeps the previous turn, and the result is
-  reported as an assumption rather than a certainty.
-- Side to move, castling rights and en-passant are *not* read from pixels. A single frame
-  cannot contain them; tracking them from move history is strictly more reliable, which is
-  also why chessvision.ai exposes `--orientation` / `--castling` / `--turn` overrides.
-- `chessvision` on PyPI is a different, unrelated project (GPL-3.0) that happens to share
-  the name.
-
-## Continuous mode
-
-Press the broadcast button once in the app, then flip **Watch the screen** on. The ReplayKit
-upload extension publishes about four frames a second into the shared App Group container; the
-app polls that mailbox, waits for the board to settle, reads it, asks the on-device engine and
-updates the island. Frames are read and discarded, never stored.
-
-Three things this design accepts, because Apple's platform requires them:
-
-- **The app must stay alive.** ReplayKit extensions cannot use ActivityKit, so the island
-  belongs to the app. A silent audio session keeps the process scheduled, which is the same
-  mechanism a music player uses; it is a keep-alive, not a supported background camera.
-- **~4 frames per second, not 60.** A board changes a few times a minute; decimating keeps the
-  extension inside its memory budget and the battery intact.
-- **An App Group is the only channel** between the two processes, so it is required.
+Three stages, each of which can say "no":
+
+- **Read.** The board is found as a rectangular region, the two square colours are estimated as a
+  palette, and every square becomes a small descriptor. Pieces are identified against templates
+  learned from your own board, so a theme it has never seen is a calibration, not a code change.
+- **Track.** A single frame cannot know whose turn it is, what castling rights remain, or whether a
+  pawn was just captured en passant. Move history supplies all of it: the observation is matched
+  against the legal moves of the position the app already knows.
+- **Search.** Stockfish runs in-process, so the answer never waits on a network. Its UCI loop is
+  driven over an internal pipe — iOS does not allow spawning helper processes.
+
+Anything ambiguous is surfaced as an explicit refusal rather than a guess, which is the single most
+important property for a tool people will trust during a game.
+
+## Limits
+
+- **One board app, one theme at a time.** The recogniser is general — templates are learned, not
+  hard-coded — but the board *finder* currently expects TakeTakeTake's layout. Other apps need a
+  per-theme calibration and, for now, a known board rectangle.
+- **Screenshots flash.** iOS has no silent screenshot API. The shutter animation belongs to
+  SpringBoard, not to apps.
+- **Free-team builds expire every 7 days.** A personal team's provisioning profile has to be
+  re-signed; a paid developer account removes the expiry.
+- **This is a study aid.** Using it in a rated online game is cheating, and it is built knowing that.
+
+## Credits
+
+- **Stockfish** — GPLv3, classical evaluation, compiled for arm64 and linked into the app.
+- **Chess pieces** — Colin M.L. Burnett's set, CC BY-SA 3.0, the same set lichess and Wikipedia use.
+- **Type** — Instrument Serif and Playfair Display, both SIL Open Font License 1.1.
+
+## Licence
+
+Source is provided as-is for study. Stockfish's GPLv3 applies to the engine and, by linking, to this
+application.
 

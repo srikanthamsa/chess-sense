@@ -152,8 +152,9 @@ struct ContentView: View {
 
             if let fen = trackedFEN, fen.contains("/") {
                 BoardThumbnail(fen: fen, highlight: highlightSquares)
-                    .frame(maxWidth: 260)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    // Full bleed inside the margins: the board is the one element worth the
+                    // width, and a capped square left a dead gap down the right edge.
+                    .frame(maxWidth: .infinity)
                     .padding(.top, 18)
                     .transition(.scale(scale: 0.96).combined(with: .opacity))
             }

@@ -71,9 +71,9 @@ struct BoardThumbnail: View {
                 }
             }
             .frame(width: side, height: side)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .strokeBorder(.white.opacity(0.08), lineWidth: 0.5)
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
