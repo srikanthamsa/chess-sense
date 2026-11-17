@@ -89,6 +89,10 @@ targets:
       - path: Shared
     settings:
       base:
+        # The handler class is only referenced by name from Info.plist, so the linker must be
+        # told to keep it: dead-stripping a class nothing references is how an extension ends
+        # up installed but invisible to ReplayKit.
+        DEAD_CODE_STRIPPING: NO
         PRODUCT_BUNDLE_IDENTIFIER: ai.chesssense.app.broadcast
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Broadcast/Info.plist

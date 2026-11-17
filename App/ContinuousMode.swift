@@ -16,6 +16,10 @@ final class ContinuousMode: ObservableObject {
     @Published private(set) var status = "Not running"
     @Published private(set) var analyses = 0
     @Published private(set) var lastMove: String?
+    /// Why the broadcast sheet could not open, if it could not.
+    @Published var broadcastNote: String?
+    /// What this build actually embeds, shown so a missing extension is obvious.
+    var embedded: String { BroadcastInfo.diagnostics }
 
     private var timer: Timer?
     private var keepAlive: AVAudioPlayer?
@@ -31,6 +35,13 @@ final class ContinuousMode: ObservableObject {
     /// The board has to settle before it is worth an engine query.
     private let settleTime: TimeInterval = 0.45
     private var pendingSince: Date?
+
+    func presentBroadcastSheet() {
+        BroadcastStarter.onFailure = { [weak self] message in
+            self?.broadcastNote = message
+        }
+        BroadcastStarter.present()
+    }
 
     func toggle() {
         active ? stop() : start()

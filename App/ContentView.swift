@@ -285,7 +285,7 @@ struct ContentView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             Button {
-                BroadcastStarter.present()
+                continuous.presentBroadcastSheet()
             } label: {
                 HStack(spacing: 14) {
                     BroadcastButton()
@@ -323,6 +323,12 @@ struct ContentView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
+                if let note = continuous.broadcastNote, !note.isEmpty {
+                    Text(note)
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                        .lineLimit(2)
+                }
                 if continuous.analyses > 0 {
                     Text("\(continuous.analyses) analysed")
                         .font(.caption.monospacedDigit())

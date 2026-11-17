@@ -727,6 +727,7 @@
 				CODE_SIGN_ENTITLEMENTS = Broadcast/ChessSenseBroadcast.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = NO;
 				DEVELOPMENT_TEAM = XKAAC8TL59;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Broadcast/Info.plist;
@@ -933,6 +934,7 @@
 				CODE_SIGN_ENTITLEMENTS = Broadcast/ChessSenseBroadcast.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = NO;
 				DEVELOPMENT_TEAM = XKAAC8TL59;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Broadcast/Info.plist;
