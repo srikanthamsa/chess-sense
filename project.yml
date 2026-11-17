@@ -44,8 +44,6 @@ targets:
     dependencies:
       - target: ChessSenseWidgets
         embed: true
-      - target: ChessSenseBroadcast
-        embed: true
     settings:
       base:
         CLANG_CXX_LANGUAGE_STANDARD: c++11
@@ -58,26 +56,23 @@ targets:
           - $(SRCROOT)/Vendor/Stockfish
         SWIFT_OBJC_BRIDGING_HEADER: App/ChessSense-Bridging-Header.h
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        CODE_SIGN_ENTITLEMENTS: App/ChessSense.entitlements
         PRODUCT_BUNDLE_IDENTIFIER: ai.chesssense.app
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: App/Info.plist
         CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "12"
+        CURRENT_PROJECT_VERSION: "13"
     info:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: chess-sense
         CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "12"
+        CFBundleVersion: "13"
         UILaunchScreen: {}
         UIAppFonts:
           - InstrumentSerif-Regular.ttf
           - InstrumentSerif-Italic.ttf
           - PlayfairDisplay-Italic-Variable.ttf
-        UIBackgroundModes:
-          - audio
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         NSSupportsLiveActivities: true
@@ -98,30 +93,6 @@ targets:
         TEST_TARGET_NAME: ChessSense
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: XKAAC8TL59
-        SWIFT_VERSION: "5.0"
-
-  ChessSenseBroadcast:
-    type: app-extension
-    platform: iOS
-    deploymentTarget: "17.0"
-    sources:
-      - path: Broadcast
-      - path: Shared
-    settings:
-      base:
-        # The handler class is only referenced by name from Info.plist, so the linker must be
-        # told to keep it: dead-stripping a class nothing references is how an extension ends
-        # up installed but invisible to ReplayKit.
-        DEAD_CODE_STRIPPING: NO
-        PRODUCT_BUNDLE_IDENTIFIER: ai.chesssense.app.broadcast
-        GENERATE_INFOPLIST_FILE: NO
-        INFOPLIST_FILE: Broadcast/Info.plist
-        CODE_SIGN_ENTITLEMENTS: Broadcast/ChessSenseBroadcast.entitlements
-        SKIP_INSTALL: YES
-        CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: XKAAC8TL59
-        MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "12"
         SWIFT_VERSION: "5.0"
 
   ChessSenseWidgets:
@@ -148,13 +119,13 @@ targets:
         SKIP_INSTALL: YES
         CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "12"
+        CURRENT_PROJECT_VERSION: "13"
     info:
       path: Widgets/Info.plist
       properties:
         CFBundleDisplayName: Best Move
         CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "12"
+        CFBundleVersion: "13"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
 

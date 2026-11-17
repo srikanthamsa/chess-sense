@@ -24,7 +24,6 @@ struct ContentView: View {
     @State private var lastEval: String?
     @State private var lastWhy: String?
 
-    @StateObject private var continuous = ContinuousMode()
     @State private var keyDraft = ""
     @State private var keySaved = false
 
@@ -37,7 +36,6 @@ struct ContentView: View {
                     coachingCard
                     trackingCard
                     analyseCard
-                    continuousCard
                     if !detail.isEmpty { detailCard }
                 }
                 .padding(.horizontal, 16)
@@ -57,14 +55,6 @@ struct ContentView: View {
                 }
             }
             .onAppear(perform: refresh)
-            .task {
-                // Poll for the extension's first frame a few times, then stop pestering.
-                for _ in 0..<20 {
-                    await continuous.autoEngage()
-                    if continuous.active { break }
-                    try? await Task.sleep(nanoseconds: 500_000_000)
-                }
-            }
             .task {
                 // Commit 3555511 dropped this hook, which left `SelfTest` unreachable and
                 // made every "-chesssense-selftest" run a no-op. Harmless in normal use.
@@ -280,91 +270,6 @@ struct ContentView: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
-        }
-    }
-
-    /// Continuous mode: the extension streams frames, the app reads them and owns the Island.
-    private var continuousCard: some View {
-        panel("Continuous mode", systemImage: "dot.radiowaves.left.and.right") {
-            Text("Start the broadcast once and the island keeps up on its own. "
-                 + "Nothing is recorded; frames are read, analysed and discarded.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            // Two ways in, because they fail differently.
-            //   1. the system picker glyph: Apple's guaranteed path, no app code involved
-            //   2. our own sheet: keeps a trace, so a failure is readable instead of silent
-            HStack(spacing: 12) {
-                BroadcastButton()
-                    .frame(width: 46, height: 46)
-                    .accessibilityIdentifier("system-broadcast-button")
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(continuous.active ? "Broadcasting" : "Start screen broadcast")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Tap the circle to open the system sheet")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-            }
-
-            Button {
-                continuous.presentBroadcastSheet()
-            } label: {
-                Text("Open the sheet from the app instead")
-                    .font(.footnote.weight(.medium))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.tint)
-            .accessibilityIdentifier("start-broadcast")
-
-            Toggle("Watch the screen", isOn: Binding(
-                get: { continuous.active },
-                set: { _ in continuous.toggle() }
-            ))
-            .tint(.accentColor)
-
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(continuous.active ? Color.green : Color.secondary.opacity(0.4))
-                    .frame(width: 8, height: 8)
-                Text(continuous.status)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text(continuous.buildLine)
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-
-                if let note = continuous.broadcastNote, !note.isEmpty {
-                    Text(note)
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                        .lineLimit(2)
-                }
-                if continuous.analyses > 0 {
-                    Text("\(continuous.analyses) analysed")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            if !continuous.broadcastLog.isEmpty {
-                VStack(alignment: .leading, spacing: 2) {
-                    ForEach(continuous.broadcastLog, id: \.self) { line in
-                        Text(line)
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-                .padding(8)
-                .background(.black.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
-            }
         }
     }
 

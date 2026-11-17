@@ -176,6 +176,39 @@ func rotated180(_ pieces: [Piece]) -> [Piece] {
 }
 
 public enum FEN {
+    /// The standard starting position, in FEN order. Used as the anchor when a fresh game is
+    /// on screen and the tracker has no history yet.
+    public static let start = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+
+    /// Decodes the board field of a FEN into 64 squares in FEN order.
+    ///
+    /// Used to re-anchor calibration: the book can be learned from any frame as long as we
+    /// can say which position that frame shows, and the side to move is irrelevant here.
+    public static func decode(_ fen: String) -> [Piece]? {
+        let board = fen.split(separator: " ").first.map(String.init) ?? fen
+        var pieces: [Piece] = []
+        pieces.reserveCapacity(64)
+        for character in board {
+            if character == "/" { continue }
+            if let digit = character.wholeNumberValue {
+                pieces.append(contentsOf: Array(repeating: Piece.empty, count: digit))
+                continue
+            }
+            let isWhite = character.isUppercase
+            let color: PieceColor = isWhite ? .white : .black
+            switch character.lowercased() {
+            case "p": pieces.append(.piece(.pawn, color))
+            case "n": pieces.append(.piece(.knight, color))
+            case "b": pieces.append(.piece(.bishop, color))
+            case "r": pieces.append(.piece(.rook, color))
+            case "q": pieces.append(.piece(.queen, color))
+            case "k": pieces.append(.piece(.king, color))
+            default: return nil
+            }
+        }
+        return pieces.count == 64 ? pieces : nil
+    }
+
     /// Encodes 64 squares given in FEN order (rank 8 first, file a first).
     /// Side-to-move and castling are supplied by the caller — for this app they come
     /// from move history rather than being read off the screen.

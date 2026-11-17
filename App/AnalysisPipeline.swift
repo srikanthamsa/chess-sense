@@ -52,7 +52,7 @@ enum AnalysisPipeline {
     ) async throws -> Outcome {
         guard let book = store.loadBook() else { throw BoardError.notCalibrated }
 
-        let read: BoardRead
+        var read: BoardRead
         do {
             read = try BoardReader.read(image: image, book: book, rect: store.loadRect())
         } catch {
@@ -60,6 +60,14 @@ enum AnalysisPipeline {
             Diagnostics.record(image: image, reason: "\(error)", book: book,
                                rectOverride: store.loadRect())
             throw error
+        }
+
+        // A book learned from a screenshot cannot read a broadcast frame: different scale,
+        // different rendering. Rather than making the user re-calibrate and retry, re-learn
+        // the book from this very frame, anchored to the position we already know, and read
+        // again. Verification still has to pass, so a wrong anchor produces a refusal.
+        if read.scaleMismatch, let healed = try? autoHeal(from: image, store: store) {
+            read = healed
         }
 
         guard read.isTrustworthy else {
@@ -189,6 +197,20 @@ enum AnalysisPipeline {
                 tip: ""
             )
         }
+    }
+
+    /// Re-learns the templates from the frame that just failed, anchored to the last position
+    /// the tracker knew (or the start position on a fresh game), then reads it back.
+    private static func autoHeal(
+        from image: PixelImage,
+        store: CalibrationStore
+    ) throws -> BoardRead {
+        let anchorFEN = store.trackedFEN ?? FEN.start
+        guard let placement = FEN.decode(anchorFEN) else { throw BoardError.notCalibrated }
+        let (book, rect, verification) = try BoardReader.calibrate(
+            image: image, placement: placement, rect: store.loadRect())
+        try store.save(book: book, rect: rect)
+        return try BoardReader.read(image: image, book: book, rect: rect)
     }
 
     // MARK: - Calibrate

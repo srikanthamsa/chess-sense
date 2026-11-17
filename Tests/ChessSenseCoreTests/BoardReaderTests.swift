@@ -304,3 +304,64 @@ final class ScaleMismatchTests: XCTestCase {
         }
     }
 }
+
+/// A book learned from one rendering must not be used on another, and re-anchoring must
+/// recover from exactly that.
+final class ScaleReheatTests: XCTestCase {
+
+    private func image(_ name: String) throws -> PixelImage {
+        let url = try XCTUnwrap(
+            Bundle.module.url(forResource: name, withExtension: "png", subdirectory: "Fixtures")
+        )
+        return try XCTUnwrap(PixelImage(contentsOf: url))
+    }
+
+    /// Halves a board image the way ReplayKit halves a screen.
+    private func halved(_ source: PixelImage, factor: Int) -> PixelImage {
+        var rgba = [UInt8]()
+        let w = source.width / factor, h = source.height / factor
+        rgba.reserveCapacity(w * h * 4)
+        for y in 0..<h {
+            for x in 0..<w {
+                let o = source.offset(x * factor, y * factor)
+                rgba.append(contentsOf: [source.rgba[o], source.rgba[o + 1],
+                                         source.rgba[o + 2], 255])
+            }
+        }
+        return PixelImage(width: w, height: h, rgba: rgba)
+    }
+
+    func testScreenshotBookRefusesAHalvedFrame() throws {
+        let full = try image("taketaketake-start")
+        let (book, rect, _) = try BoardReader.calibrate(image: full)
+        XCTAssertGreaterThan(book.squareSize ?? 0, 140)
+
+        let small = halved(full, factor: 2)
+        let read = try BoardReader.read(image: small, book: book, rect: rect)
+        // Either the scale check or the shape check must stop it; the unacceptable outcome is
+        // a *confident* wrong answer.
+        XCTAssertFalse(read.isTrustworthy, "a 151 px book must not bless a 75 px frame")
+    }
+
+    func testReanchoringOnTheStreamedFrameRecovers() throws {
+        let full = try image("taketaketake-start")
+        let small = halved(full, factor: 2)
+
+        // The exact auto-heal path: anchor to the known position, learn from this frame.
+        let (book, rect, verification) = try BoardReader.calibrate(
+            image: small, placement: FEN.decode(FEN.start)!)
+        XCTAssertTrue(verification.isTrustworthy)
+        XCTAssertLessThan(book.squareSize ?? 0, 100)
+
+        let read = try BoardReader.read(image: small, book: book, rect: rect)
+        XCTAssertTrue(read.isTrustworthy)
+        XCTAssertEqual(String(read.fen.split(separator: " ")[0]), FEN.start)
+    }
+
+    func testDecodeRoundTrips() {
+        XCTAssertEqual(FEN.decode(FEN.start).map { FEN.encode($0).split(separator: " ").first.map(String.init) ?? "" },
+                       FEN.start)
+        XCTAssertEqual(FEN.decode("8/8/8/8/8/8/8/8")?.count, 64)
+        XCTAssertNil(FEN.decode("not a fen"))
+    }
+}
