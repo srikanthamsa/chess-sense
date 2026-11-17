@@ -1,23 +1,36 @@
 import PhotosUI
 import SwiftUI
 
+/// One idea: a scoreboard. Dense, high-contrast, single accent, no decoration that is not
+/// carrying information.
+///
+/// The language is borrowed from sports apps: a compressed heavy display face for the number
+/// that matters, uppercase micro-labels with wide tracking, hairline dividers instead of
+/// cards-in-cards, and exactly one saturated colour doing all the pointing.
 struct ContentView: View {
     private let store = CalibrationStore()
 
-    /// What a picked screenshot is for. Two pickers used to share one `pickerItem`, so the
-    /// handler guessed from calibration state and the button label could lie.
     private enum PickIntent { case calibrate, analyse }
+
+    // MARK: Colours
+
+    private let ink = Color(red: 0.96, green: 0.97, blue: 0.98)
+    private let mute = Color.white.opacity(0.55)
+    private let accent = Color(red: 0.89, green: 0.12, blue: 0.19)
+    private let surface = Color(red: 0.075, green: 0.078, blue: 0.086)
+    private let hairline = Color.white.opacity(0.08)
+
+    // MARK: State
 
     @State private var calibrationItem: PhotosPickerItem?
     @State private var analysisItem: PhotosPickerItem?
-    @ScaledMetric(relativeTo: .largeTitle) private var headlineSize: CGFloat = 40
 
     @State private var busy = false
     @State private var tracking = false
     @State private var calibrationDate: Date?
     @State private var trackedFEN: String?
 
-    @State private var headline = "Ready"
+    @State private var headline = "READY"
     @State private var subline = "Screenshot a fresh game to calibrate."
     @State private var detail = ""
     @State private var lastMove: String?
@@ -30,20 +43,27 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                bento
-                    .padding(.horizontal, 14)
-                    .padding(.bottom, 28)
+                VStack(alignment: .leading, spacing: 0) {
+                    wordmark
+                    scoreboard
+                    statStrip
+                    actions
+                    positionSection
+                    setupSection
+                    if !detail.isEmpty { diagnostics }
+                }
+                .padding(.bottom, 40)
             }
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle("chess-sense")
-            .navigationBarTitleDisplayMode(.large)
+            .background(Color(red: 0.043, green: 0.043, blue: 0.047).ignoresSafeArea())
+            .scrollIndicators(.hidden)
+            .navigationBarHidden(true)
             .overlay {
                 if busy {
                     ZStack {
-                        Color.black.opacity(0.08).ignoresSafeArea()
-                        ProgressView().controlSize(.large)
-                            .padding(24)
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+                        Color.black.opacity(0.55).ignoresSafeArea()
+                        ProgressView()
+                            .controlSize(.large)
+                            .tint(ink)
                     }
                 }
             }
@@ -53,7 +73,7 @@ struct ContentView: View {
                 busy = true
                 let report = await SelfTest.run()
                 busy = false
-                headline = report.passed ? "Self test passed" : "Self test failed"
+                headline = report.passed ? "SELF TEST PASSED" : "SELF TEST FAILED"
                 subline = report.passed ? "The whole pipeline ran on this device." : "See Details."
                 detail = report.text
             }
@@ -66,320 +86,356 @@ struct ContentView: View {
                 Task { await handle(item, intent: .analyse) }
             }
         }
+        .preferredColorScheme(.dark)
     }
 
-    // MARK: - Bento
+    // MARK: - Wordmark
 
-    /// A three-band bento: one statement, a pair of actions, a pair of settings, then the
-    /// wide detail strip. Tiles in a band share a height, which is what makes the grid read as
-    /// a composition rather than a list of cards.
-    private var bento: some View {
-        VStack(spacing: 12) {
-            resultTile
-
-            HStack(alignment: .top, spacing: 12) {
-                analyseTile.frame(maxWidth: .infinity)
-                islandTile.frame(maxWidth: .infinity)
-            }
-            .frame(height: 138)
-
-            HStack(alignment: .top, spacing: 12) {
-                calibrationTile.frame(maxWidth: .infinity)
-                coachingTile.frame(maxWidth: .infinity)
-            }
-            .frame(height: 152)
-
-            positionTile
-
-            if !detail.isEmpty { detailTile }
+    private var wordmark: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("CHESS")
+                .foregroundStyle(ink)
+            + Text("SENSE")
+                .foregroundStyle(accent)
+            Spacer()
+            Text(calibrationDate == nil ? "UNCALIBRATED" : "LIVE")
+                .font(.system(size: 10, weight: .heavy))
+                .tracking(1.6)
+                .foregroundStyle(calibrationDate == nil ? mute : accent)
         }
-        .padding(.top, 4)
+        .font(.system(size: 15, weight: .black).width(.compressed))
+        .tracking(2.4)
+        .padding(.horizontal, 20)
+        .padding(.top, 14)
+        .padding(.bottom, 18)
     }
 
-    // MARK: - Tiles
+    // MARK: - Scoreboard
 
-    /// The statement. One number, one sentence, nothing competing with it.
-    private var resultTile: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text(headline)
-                    .font(.brandHero(headlineSize * 1.18))
-                    .tracking(-0.5)
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(2)
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                    .animation(.snappy, value: headline)
+    private var scoreboard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(headline)
+                .font(.system(size: 62, weight: .black).width(.compressed))
+                .tracking(-1.5)
+                .foregroundStyle(ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.4)
+                .contentTransition(.numericText())
+                .animation(.snappy(duration: 0.35), value: headline)
+
+            HStack(spacing: 10) {
                 if let lastEval {
-                    Text(lastEval)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 3)
-                        .background(evalTint.opacity(0.16), in: Capsule())
-                        .foregroundStyle(evalTint)
+                    evalChip(lastEval)
                 }
-                Spacer(minLength: 0)
+                if let lastMove {
+                    Text(lastMove)
+                        .font(.system(size: 12, weight: .heavy))
+                        .tracking(1.2)
+                        .foregroundStyle(mute)
+                }
+                Spacer()
             }
+            .padding(.top, 6)
 
             Text(subline)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+                .font(.system(size: 13.5, weight: .medium))
+                .foregroundStyle(mute)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 10)
 
             if let lastWhy, !lastWhy.isEmpty {
                 Text(lastWhy)
-                    .font(.footnote)
-                    .foregroundStyle(.primary.opacity(0.72))
-                    .lineLimit(2)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(ink.opacity(0.72))
+                    .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 8)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(tileFill, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .padding(.horizontal, 20)
+        .padding(.bottom, 22)
     }
 
-    private var evalTint: Color {
-        guard let lastEval else { return .secondary }
-        if lastEval.hasPrefix("#") { return .green }
-        if lastEval.hasPrefix("-#") { return .red }
-        guard let v = Double(lastEval.replacingOccurrences(of: "+", with: "")) else { return .secondary }
-        if v > 0.6 { return .green }
-        if v < -0.6 { return .red }
-        return .secondary
-    }
-
-    private var analyseTile: some View {
-        tile("Analyse", systemImage: "sparkle.magnifyingglass", tint: .blue) {
-            Text("Screenshot the board, pick it here, get the move.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-            Spacer(minLength: 0)
-            PhotosPicker(selection: $analysisItem, matching: .images) {
-                Label("Screenshot", systemImage: "photo")
-                    .font(.footnote.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.regular)
+    /// The scorebox: three facts, evenly spaced, separated by hairlines. Empty values are an
+    /// em dash rather than a blank, so the structure is visible before any analysis exists.
+    private var statStrip: some View {
+        HStack(spacing: 0) {
+            stat("MOVE", lastMove ?? "—")
+            Rectangle().fill(hairline).frame(width: 1, height: 30)
+            stat("TURN", turnText)
+            Rectangle().fill(hairline).frame(width: 1, height: 30)
+            stat("ENGINE", engineText)
         }
+        .padding(.vertical, 12)
+        .background(
+            Rectangle().fill(hairline).frame(height: 1),
+            alignment: .top
+        )
+        .background(
+            Rectangle().fill(hairline).frame(height: 1),
+            alignment: .bottom
+        )
+        .padding(.horizontal, 20)
+        .padding(.bottom, 18)
     }
 
-    private var islandTile: some View {
-        tile("Island", systemImage: "capsule.portrait.fill", tint: .pink) {
-            Text(tracking ? "Live Activity running." : "Shows the move above the game.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-            Spacer(minLength: 0)
-            Button {
-                do {
-                    if LiveActivityController.isRunning {
-                        Task { await LiveActivityController.end() }
-                    } else {
-                        _ = try LiveActivityController.start()
-                    }
-                    tracking = LiveActivityController.isRunning
-                } catch {
-                    headline = "Island failed"
-                    subline = "Live Activities are unavailable for this app."
-                    detail = "\(error)"
-                }
-            } label: {
-                Label(tracking ? "Stop" : "Start",
-                      systemImage: tracking ? "stop.circle.fill" : "play.circle.fill")
-                    .font(.footnote.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.regular)
-            .tint(tracking ? .red : .accentColor)
-        }
-    }
-
-    private var calibrationTile: some View {
-        tile("Calibration", systemImage: "square.grid.3x3.fill", tint: .orange) {
-            Text("Learn this board once, from the start.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-            PhotosPicker(selection: $calibrationItem, matching: .images) {
-                Label("Pick start", systemImage: "photo.badge.plus")
-                    .font(.footnote.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.regular)
-
-            Spacer(minLength: 0)
-
-            if let calibrationDate {
-                Label(calibrationDate.formatted(date: .abbreviated, time: .omitted),
-                      systemImage: "checkmark.seal.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.green)
-                    .lineLimit(1)
-            } else {
-                Label("not calibrated", systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.orange)
-                    .lineLimit(1)
-            }
-
-            Button("Reset") {
-                store.reset()
-                refresh()
-                headline = "Reset"
-                subline = "Calibration and move history cleared."
-                lastMove = nil; lastEval = nil; lastWhy = nil
-            }
-            .font(.caption2)
-            .foregroundStyle(.red)
-            .buttonStyle(.plain)
-        }
-    }
-
-    private var coachingTile: some View {
-        tile("Coach", systemImage: "text.bubble.fill", tint: .green) {
-            Text("Optional: warmer wording.")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+    private func stat(_ label: String, _ value: String) -> some View {
+        VStack(spacing: 4) {
+            Text(label)
+                .font(.system(size: 8.5, weight: .heavy))
+                .tracking(1.5)
+                .foregroundStyle(mute)
+            Text(value)
+                .font(.system(size: 13, weight: .black).width(.compressed))
+                .tracking(0.4)
+                .foregroundStyle(ink)
                 .lineLimit(1)
-            HStack(spacing: 6) {
-                SecureField("sk-…", text: $keyDraft)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .font(.caption)
-                    .textFieldStyle(.roundedBorder)
-                Button("Save") {
-                    keySaved = APIKeyStore.save(keyDraft)
-                    keyDraft = ""
-                    headline = keySaved ? "Key saved" : "Key failed"
-                    subline = keySaved
-                        ? "DeepSeek will refine each explanation."
-                        : "Could not write to the keychain."
-                }
-                .font(.caption.weight(.semibold))
-                .buttonStyle(.bordered)
-                .disabled(keyDraft.trimmingCharacters(in: .whitespaces).isEmpty)
+                .minimumScaleFactor(0.6)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var turnText: String {
+        guard let fen = trackedFEN,
+              let field = fen.split(separator: " ").dropFirst().first
+        else { return "—" }
+        return field == "w" ? "WHITE" : "BLACK"
+    }
+
+    /// The engine that answered. On-device always, so it is a constant fact, not a status.
+    private var engineText: String { "STOCKFISH 11" }
+
+    private func evalChip(_ text: String) -> some View {
+        let tint = advantageTint(text)
+        return Text(text)
+            .font(.system(size: 11, weight: .black, design: .rounded))
+            .monospacedDigit()
+            .foregroundStyle(tint)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2.5)
+            .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+    }
+
+    // MARK: - Actions
+
+    private var actions: some View {
+        HStack(spacing: 10) {
+            PhotosPicker(selection: $analysisItem, matching: .images) {
+                Text("SCREENSHOT")
+                    .font(.system(size: 12, weight: .black))
+                    .tracking(1.4)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(accent, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
 
-            Spacer(minLength: 0)
+            Button {
+                tracking.toggle()
+                Task { await setTracking(tracking) }
+            } label: {
+                Text(tracking ? "STOP" : "ISLAND")
+                    .font(.system(size: 12, weight: .black))
+                    .tracking(1.4)
+                    .foregroundStyle(tracking ? accent : ink)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(tracking ? accent : hairline, lineWidth: 1)
+                    )
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 26)
+    }
 
-            HStack(spacing: 4) {
-                Label(APIKeyStore.isConfigured ? "connected" : "on device",
-                      systemImage: APIKeyStore.isConfigured ? "bolt.horizontal.circle.fill" : "cpu")
-                    .font(.caption2)
-                    .foregroundStyle(APIKeyStore.isConfigured ? .green : .secondary)
+    // MARK: - Position
+
+    private var positionSection: some View {
+        section("POSITION") {
+            HStack(alignment: .top, spacing: 12) {
+                Text(trackedFEN ?? "No position tracked. Calibrate, then analyse a move.")
+                    .font(.system(size: 10.5, design: .monospaced))
+                    .foregroundStyle(trackedFEN == nil ? mute : ink.opacity(0.8))
+                    .lineLimit(3)
+                    .textSelection(.enabled)
                 Spacer(minLength: 0)
-                if APIKeyStore.isConfigured {
-                    Button("Remove") {
-                        APIKeyStore.clear()
-                        refresh()
-                        headline = "Key removed"
-                        subline = "Falling back to on-device explanations."
-                    }
-                    .font(.caption2)
-                    .foregroundStyle(.red)
-                    .buttonStyle(.plain)
+                NavigationLink {
+                    DesignStudioView()
+                } label: {
+                    Text("STUDIO")
+                        .font(.system(size: 10, weight: .black))
+                        .tracking(1.2)
+                        .foregroundStyle(accent)
                 }
             }
         }
     }
 
-    /// Wide strip: the position being tracked, and the way into the design studio.
-    private var positionTile: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 7) {
-                Image(systemName: "number")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.teal)
-                    .frame(width: 22, height: 22)
-                    .background(Color.teal.opacity(0.14),
-                                in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                Text("Position")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.primary.opacity(0.85))
-                Spacer()
-                NavigationLink("Studio") { DesignStudioView() }
-                    .font(.caption2)
+    // MARK: - Setup
+
+    private var setupSection: some View {
+        section("SETUP") {
+            VStack(spacing: 0) {
+                row {
+                    HStack(spacing: 10) {
+                        statusDot(on: calibrationDate != nil)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(calibrationDate == nil ? "Not calibrated" : "Calibrated")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(ink)
+                            Text(calibrationDate.map(Self.dateText) ?? "One start-position screenshot")
+                                .font(.system(size: 11))
+                                .foregroundStyle(mute)
+                        }
+                        Spacer()
+                        PhotosPicker(selection: $calibrationItem, matching: .images) {
+                            Text("PICK")
+                                .font(.system(size: 11, weight: .black))
+                                .tracking(1.2)
+                                .foregroundStyle(ink)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                        .stroke(hairline, lineWidth: 1)
+                                )
+                        }
+                        if calibrationDate != nil {
+                            Button {
+                                store.reset()
+                                refresh()
+                                headline = "READY"
+                                subline = "Calibration cleared."
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(mute)
+                            }
+                        }
+                    }
+                }
+
+                divider
+
+                row {
+                    HStack(spacing: 10) {
+                        statusDot(on: keySaved)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(keySaved ? "DeepSeek connected" : "Coaching offline")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(ink)
+                            Text(keySaved ? "Warmer explanations" : "Uses the on-device line")
+                                .font(.system(size: 11))
+                                .foregroundStyle(mute)
+                        }
+                        Spacer()
+                        if keySaved {
+                            Button {
+                                APIKeyStore.clear()
+                                refresh()
+                            } label: {
+                                Text("REMOVE")
+                                    .font(.system(size: 10, weight: .black))
+                                    .tracking(1.1)
+                                    .foregroundStyle(accent)
+                            }
+                        } else {
+                            TextField("sk-…", text: $keyDraft)
+                                .font(.system(size: 11, design: .monospaced))
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .frame(width: 96)
+                            Button {
+                                APIKeyStore.save(keyDraft)
+                                keyDraft = ""
+                                refresh()
+                            } label: {
+                                Text("SAVE")
+                                    .font(.system(size: 10, weight: .black))
+                                    .tracking(1.1)
+                                    .foregroundStyle(ink)
+                            }
+                        }
+                    }
+                }
             }
-            Text(trackedFEN ?? "No position tracked yet. Calibrate, then analyse a move.")
-                .font(.system(size: 10.5, design: .monospaced))
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(12)
-        .background(tileFill, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
-    private var detailTile: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: "doc.text.magnifyingglass")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                Text("Details")
-                    .font(.system(size: 11, weight: .semibold))
-                    .tracking(0.4)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
+    private func statusDot(on: Bool) -> some View {
+        Circle()
+            .fill(on ? accent : Color.white.opacity(0.22))
+            .frame(width: 6, height: 6)
+    }
+
+    // MARK: - Diagnostics
+
+    private var diagnostics: some View {
+        section("DIAGNOSTICS") {
             Text(detail)
                 .font(.system(size: 10.5, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(mute)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(14)
-        .background(tileFill, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
-    // MARK: - Tile chrome
+    // MARK: - Chrome
 
-    private var tileFill: some ShapeStyle {
-        .regularMaterial
-    }
-
-    /// One bento tile: a tinted glyph, a small title, then content that fills the band.
-    private func tile<Content: View>(
+    private func section<Content: View>(
         _ title: String,
-        systemImage: String,
-        tint: Color,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 7) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(tint)
-                    .frame(width: 22, height: 22)
-                    .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                Text(title)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.primary.opacity(0.85))
-                Spacer(minLength: 0)
-            }
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.system(size: 9.5, weight: .heavy))
+                .tracking(1.8)
+                .foregroundStyle(mute)
             content()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(12)
-        .background(tileFill, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .padding(.horizontal, 20)
+        .padding(.bottom, 24)
     }
+
+    private func row<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .padding(.vertical, 11)
+    }
+
+    private var divider: some View {
+        Rectangle().fill(hairline).frame(height: 1)
+    }
+
+    // MARK: - Actions
 
     private func refresh() {
         calibrationDate = store.calibrationDate
         trackedFEN = store.trackedFEN
         keySaved = APIKeyStore.isConfigured
+        tracking = LiveActivityController.isRunning
     }
 
-    /// The picker's own intent decides what happens. Deciding from `store.isCalibrated`
-    /// meant "Pick starting-position screenshot" analysed on a calibrated device, and
-    /// "Pick current-position screenshot" calibrated on a fresh one.
+    private func setTracking(_ on: Bool) async {
+        if on {
+            do {
+                _ = try LiveActivityController.start()
+                headline = "ISLAND ON"
+                subline = "Screenshot a move; the answer appears above the game."
+            } catch {
+                tracking = false
+                headline = "ISLAND OFF"
+                subline = "Live Activities are not available right now."
+            }
+        } else {
+            await LiveActivityController.end()
+            headline = "ISLAND OFF"
+            subline = "Stopped."
+        }
+    }
+
     private func handle(_ item: PhotosPickerItem, intent: PickIntent) async {
         busy = true
         defer {
@@ -389,7 +445,7 @@ struct ContentView: View {
         }
         do {
             guard let data = try await item.loadTransferable(type: Data.self) else {
-                headline = "No image"
+                headline = "NO IMAGE"
                 subline = "That screenshot could not be loaded. Pick it again."
                 return
             }
@@ -398,9 +454,8 @@ struct ContentView: View {
             case .calibrate:
                 let read = try await AnalysisPipeline.calibrateOffMain(imageData: data)
                 refresh()
-                headline = "Calibrated"
-                subline = "This board is now recognised. Screenshot a move to get one."
-                // Measurements belong in Details, not in the sentence a player reads.
+                headline = "CALIBRATED"
+                subline = "This board is recognised. Screenshot a move to get one."
                 detail = [
                     "reading verified: worst shape distance \(read.worstShapeDistance) bits, "
                         + "colour margin \(String(format: "%.2f", read.minColorMargin))",
@@ -409,7 +464,7 @@ struct ContentView: View {
 
             case .analyse:
                 guard store.isCalibrated else {
-                    headline = "Not calibrated"
+                    headline = "NOT CALIBRATED"
                     subline = "Pick a starting-position screenshot first, so I know this board."
                     return
                 }
@@ -423,57 +478,46 @@ struct ContentView: View {
                 }
             }
         } catch {
-            headline = "Couldn't read"
+            headline = "COULDN'T READ"
             subline = Self.recovery(for: error)
             detail = "\(error)"
         }
     }
 
-    /// What the player should do next, in their words. The raw error stays in Details.
-    private static func recovery(for error: Error) -> String {
-        if let boardError = error as? BoardError {
-            return boardError.userFacingDescription
-        }
-        return "Something went wrong. Screenshot the board again and pick it."
-    }
-
     private func present(_ outcome: AnalysisPipeline.Outcome) {
+        lastMove = outcome.move?.displayMove
+        lastEval = outcome.move.map { outcome.playerEval.isEmpty ? $0.evalText : outcome.playerEval }
+        lastWhy = outcome.why.isEmpty ? nil : outcome.why
+
         if let move = outcome.move {
             headline = move.displayMove
-            lastEval = move.evalText
-            lastMove = move.displayMove
-            lastWhy = outcome.why.isEmpty ? nil : outcome.why
-            subline = outcome.trackingNote.isEmpty ? "analysed" : outcome.trackingNote
-        } else if !outcome.trusted {
-            headline = "Unclear"
-            lastEval = nil
-            lastWhy = nil
-            subline = "I could not read the board confidently, so I am not guessing."
+            subline = outcome.trackingNote.isEmpty
+                ? "Best move in this position."
+                : outcome.trackingNote
         } else {
-            headline = "No move"
-            lastEval = nil
-            lastWhy = nil
-            // `outcome.failure` is diagnostic ("engine: no engine available
-            // (lichess cloud: …, stockfish.online: …)"). Say something usable here and
-            // leave the reason in Details.
-            subline = outcome.failure == nil
-                ? "The engine had nothing for this position."
-                : "I couldn't get an engine answer. Check your connection and try again."
+            headline = "NO MOVE"
+            subline = outcome.failure ?? "The engine had nothing to say."
         }
-
-        detail = [
-            outcome.trackingNote,
-            outcome.move.map { "pv: \($0.principalVariation)" },
-            outcome.move.map { "via \($0.provenance)" },
-            outcome.failure.map { "note: \($0)" },
-            outcome.fen,
-        ]
-        .compactMap { $0 }
-        .filter { !$0.isEmpty }
-        .joined(separator: "\n")
     }
-}
 
-#Preview {
-    ContentView()
+    private static func dateText(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMM · HH:mm"
+        return formatter.string(from: date)
+    }
+
+    private static func recovery(for error: Error) -> String {
+        switch error {
+        case BoardError.notCalibrated:
+            return "Pick a starting-position screenshot first."
+        case BoardError.boardNotFound:
+            return "No board in that image. Frame the whole board."
+        case BoardError.verificationFailed:
+            return "That is not a starting position. Use a fresh game."
+        case let BoardError.unknownSquare(rank, file, _):
+            return "Square \(file + 1)/\(8 - rank) was unreadable. Try another frame."
+        default:
+            return "\(error)"
+        }
+    }
 }
