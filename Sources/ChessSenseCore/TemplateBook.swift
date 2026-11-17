@@ -9,8 +9,8 @@ import Foundation
 /// Calibration is *self-verifying*: after learning, the frame is re-read and must
 /// reproduce the expected position exactly. A wrong theme, a mid-animation frame or
 /// a finished game therefore fails loudly instead of baking a broken book.
-public struct TemplateBook: Sendable {
-    public struct Entry: Sendable {
+public struct TemplateBook: Sendable, Codable {
+    public struct Entry: Sendable, Codable {
         public let piece: Piece
         public let signature: SquareSignature
         /// How many calibration squares produced this entry.

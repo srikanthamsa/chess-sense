@@ -1,7 +1,7 @@
 import Foundation
 
 /// Pixel bounds of the board in a decoded screen, origin top-left.
-public struct BoardRect: Sendable, Equatable {
+public struct BoardRect: Sendable, Equatable, Codable {
     public var x: Int
     public var y: Int
     public var width: Int

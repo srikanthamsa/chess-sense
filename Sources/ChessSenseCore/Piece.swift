@@ -52,8 +52,49 @@ extension Piece: CustomStringConvertible {
     }
 }
 
+public extension Piece {
+    /// Parses a FEN piece letter (`"."` for empty).
+    init?(fenLetter: Character) {
+        if fenLetter == "." { self = .empty; return }
+        let color: PieceColor = fenLetter.isUppercase ? .white : .black
+        switch Character(fenLetter.lowercased()) {
+        case "p": self = .piece(.pawn, color)
+        case "n": self = .piece(.knight, color)
+        case "b": self = .piece(.bishop, color)
+        case "r": self = .piece(.rook, color)
+        case "q": self = .piece(.queen, color)
+        case "k": self = .piece(.king, color)
+        default: return nil
+        }
+    }
+
+    /// Stable single-character code: FEN letter, `"."` for empty.
+    var code: String {
+        fenLetter.map(String.init) ?? "."
+    }
+}
+
+extension Piece: Codable {
+    public init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        guard let first = raw.first, let parsed = Piece(fenLetter: first) else {
+            throw DecodingError.dataCorrupted(.init(
+                codingPath: decoder.codingPath,
+                debugDescription: "bad piece code \(raw)"
+            ))
+        }
+        self = parsed
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.singleValueContainer()
+        try c.encode(code)
+    }
+}
+
 public enum BoardError: Error, CustomStringConvertible {
     case unreadableImage
+    case notCalibrated
     case boardNotFound
     case implausibleRect(BoardRect)
     case inconsistentCalibration(square: String, expected: Piece, got: Piece)
@@ -63,6 +104,7 @@ public enum BoardError: Error, CustomStringConvertible {
     public var description: String {
         switch self {
         case .unreadableImage: return "image could not be decoded"
+        case .notCalibrated: return "no template book — calibrate from a fresh game first"
         case .boardNotFound: return "no 8x8 board-like region found"
         case let .implausibleRect(r): return "implausible board rect \(r)"
         case let .inconsistentCalibration(sq, expected, got):

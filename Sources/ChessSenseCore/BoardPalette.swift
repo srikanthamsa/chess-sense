@@ -73,8 +73,8 @@ public struct BoardPalette: Sendable {
         let evenColour = medoid(even)
         let oddColour = medoid(odd)
 
-        let evenLuma = evenColour.luma
-        let oddLuma = oddColour.luma
+        let evenLuma = evenColour.luminance
+        let oddLuma = oddColour.luminance
         let lightIsEven = evenLuma >= oddLuma
 
         return BoardPalette(

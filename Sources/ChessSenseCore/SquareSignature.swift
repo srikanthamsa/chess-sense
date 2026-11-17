@@ -11,7 +11,7 @@ import Foundation
 ///    background. This is what separates white pieces from black pieces, which are
 ///    otherwise the *same silhouette* (measured at Hamming distance 1 on the fixture —
 ///    shape alone literally cannot do it).
-public struct SquareSignature: Sendable, Hashable {
+public struct SquareSignature: Sendable, Hashable, Codable {
     public var words: [UInt64]
     /// Fraction of ink pixels brighter than `backgroundLuma + brightenMargin`.
     public var brightFraction: Double
@@ -147,7 +147,7 @@ public enum SquareExtractor {
     ) -> SquareSignature {
         let b = innerBounds(rect: rect, rank: rank, file: file)
         let bg = palette.background(rank: rank, file: file)
-        let bgLuma = bg.luma
+        let bgLuma = bg.luminance
         let brightThreshold = min(bgLuma + brightenMargin, brightThresholdCap)
 
         var cells = [Int](repeating: 0, count: SquareSignature.grid * SquareSignature.grid)

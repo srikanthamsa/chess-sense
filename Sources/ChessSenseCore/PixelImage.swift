@@ -87,7 +87,7 @@ public struct RGB: Sendable, Hashable, CustomStringConvertible {
         self.b = b
     }
 
-    public var luma: Double { ChessSenseCore.luma(r, g, b) }
+    public var luminance: Double { luma(r, g, b) }
 
     public var description: String { "RGB(\(r), \(g), \(b))" }
 }

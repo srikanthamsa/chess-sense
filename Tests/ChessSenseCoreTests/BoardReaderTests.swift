@@ -63,8 +63,8 @@ final class BoardReaderTests: XCTestCase {
         let rect = try XCTUnwrap(BoardLocator.locate(image))
         let palette = BoardPalette.estimate(image: image, rect: rect)
 
-        let lightLuma = palette.light.luma
-        let darkLuma = palette.dark.luma
+        let lightLuma = palette.light.luminance
+        let darkLuma = palette.dark.luminance
         XCTAssertGreaterThan(lightLuma, darkLuma + 0.05)
         XCTAssertTrue(palette.lightIsEvenParity, "a8 is a light square on a normal board")
 
