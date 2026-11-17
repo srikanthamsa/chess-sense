@@ -108,7 +108,11 @@ public struct CheckerMark: View {
     }
 }
 
-/// The piece that is moving, as a colour-coded badge.
+/// The piece that is moving: the glyph alone, in its accent.
+///
+/// It had a filled circle with a stroke, which read as a thick inner border against the
+/// black Island and competed with the move. The glyph carries the same information with no
+/// chrome at all.
 public struct PieceBadge: View {
     let symbol: String
     let accent: Color
@@ -121,16 +125,14 @@ public struct PieceBadge: View {
     }
 
     public var body: some View {
-        ZStack {
-            Circle().fill(accent.opacity(0.16))
-            Circle().strokeBorder(accent.opacity(0.28), lineWidth: 0.5)
+        Group {
             if symbol.isEmpty {
-                CheckerMark(size: 2.6, gap: 2, tint: accent)
+                CheckerMark(size: 2.8, gap: 2.2, tint: accent)
             } else {
                 Text(symbol)
-                    .font(.system(size: diameter * 0.52))
+                    .font(.system(size: diameter * 0.82))
                     .foregroundStyle(accent)
-                    .offset(y: -0.5)
+                    .shadow(color: accent.opacity(0.45), radius: 6)
             }
         }
         .frame(width: diameter, height: diameter)
@@ -398,18 +400,20 @@ public struct IslandExpandedBottom: View {
     /// Full-bleed text was being sliced by the bottom-left curve of the Island, and three
     /// lines turned the whole thing into a notification banner.
     public var body: some View {
-        HStack(alignment: .center, spacing: 7) {
+        HStack(alignment: .top, spacing: 7) {
             Capsule()
                 .fill(LinearGradient(colors: [accent, accent.opacity(0.25)],
                                      startPoint: .top, endPoint: .bottom))
-                .frame(width: 2.5, height: 13)
+                .frame(width: 2.5, height: 12)
+                .padding(.top, 2)
                 .opacity(presentation == .rejected ? 0.9 : 1)
 
             Text(detailText)
                 .font(.system(size: Island.whySize, weight: .medium))
+                .lineSpacing(1.2)
                 .foregroundStyle(.white.opacity(0.74))
-                .lineLimit(1)
-                .truncationMode(.tail)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
                 .contentTransition(.opacity)
                 .animation(.easeOut(duration: 0.25), value: detailText)
         }
@@ -424,8 +428,8 @@ public struct IslandExpandedBottom: View {
         case .pending:
             return "Reading the board…"
         case .move:
-            if !state.why.isEmpty { return state.why.islandShort }
-            if !state.principalVariation.isEmpty { return state.principalVariation.islandShort }
+            if !state.why.isEmpty { return state.why }
+            if !state.principalVariation.isEmpty { return state.principalVariation }
             return state.provenance
         }
     }
