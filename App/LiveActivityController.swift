@@ -44,7 +44,13 @@ enum LiveActivityController {
 
     /// Pushes a new best move, or an explicit "I could not read the board" state.
     /// A low-confidence read must never be rendered as a move.
+    ///
+    /// If nothing is running yet it starts one first, so a Shortcut invoked on a cold app
+    /// still produces an Island instead of silently doing nothing.
     static func update(_ move: EngineMove?, trusted: Bool) async {
+        if Activity<BestMoveAttributes>.activities.isEmpty {
+            _ = try? start()
+        }
         guard let activity = Activity<BestMoveAttributes>.activities.first else { return }
         let state: BestMoveAttributes.ContentState
         if let move, trusted {
