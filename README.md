@@ -270,9 +270,28 @@ Note for anyone building from a restricted shell: SwiftUI's `@State` needs
 not permitted` / `produced malformed response`. Passing
 `OTHER_SWIFT_FLAGS='-disable-sandbox'` fixes it. Xcode's UI does not need this.
 
-Not yet verified: nothing has run on a physical device, so Island rendering, App Intent
-background execution and real end-to-end latency are still unmeasured. Signing also needs
-an Apple ID added under Xcode → Settings → Accounts.
+### Verified on iOS
+
+`./scripts/run-on-device.sh` and `-chesssense-selftest` run the real binary end to end with
+no taps. On iOS 27.2 (simulator, Xcode 27.2):
+
+```
+SELFTEST RESULT PASSED
+PASS  bundle fixture: taketaketake-start.png, 582389 bytes
+PASS  calibrate (13 templates, self-verifying): worst shape 5, colour margin 0.43, trusted yes
+PASS  tracker bootstrap: book + rect persisted (1206x1206)
+PASS  analyse + live engine + SAN: e4 +0.19 · lichess cloud · d75 · pv e4 e5 Nf3 Nc6 Bc4
+PASS  tracked position advanced: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+INFO  live activity: started and updated
+```
+
+That covers the reader, the rules, the network engine and ActivityKit inside the shipping
+binary. `docs/simulator-selftest.png` is the screen it produces.
+
+Still unverified: the Dynamic Island's rendered appearance and the Action Button/Back Tap
+trigger, which need a physical iPhone. A signed build also needs an **Xcode developer
+account** — being signed in to the system Apple Account is not sufficient; Xcode's account
+list must contain the Apple ID, and `xcodebuild` reports `No Accounts` when it doesn't.
 
 ## Notes
 

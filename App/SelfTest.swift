@@ -118,6 +118,15 @@ enum SelfTest {
         for line in lines { print("SELFTEST \(line)") }
         print("SELFTEST RESULT \(passed ? "PASSED" : "FAILED")")
         print("---- SELFTEST END ----")
+
+        // Also written to Documents: `simctl launch --console` needs a pty, which is not
+        // available in every environment, and a file survives the app being relaunched.
+        let dump = (["SELFTEST RESULT \(passed ? "PASSED" : "FAILED")"] + lines.map { "SELFTEST \($0)" })
+            .joined(separator: "\n")
+        if let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            try? dump.write(to: dir.appendingPathComponent("selftest-report.txt"),
+                            atomically: true, encoding: .utf8)
+        }
         return Report(text: text, passed: passed)
     }
 }
