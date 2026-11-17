@@ -38,6 +38,9 @@ targets:
       # into the app target. The widget stays engine-free and small.
       - path: Vendor/Stockfish
         type: group
+    scheme:
+      testTargets:
+        - ChessSenseUITests
     dependencies:
       - target: ChessSenseWidgets
         embed: true
@@ -61,13 +64,13 @@ targets:
         INFOPLIST_FILE: App/Info.plist
         CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "5"
+        CURRENT_PROJECT_VERSION: "6"
     info:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: chess-sense
         CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "5"
+        CFBundleVersion: "6"
         UILaunchScreen: {}
         UIAppFonts:
           - InstrumentSerif-Regular.ttf
@@ -79,6 +82,23 @@ targets:
           - UIInterfaceOrientationPortrait
         NSSupportsLiveActivities: true
         NSSupportsLiveActivitiesFrequentUpdates: true
+
+  ChessSenseUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: UITests
+    dependencies:
+      - target: ChessSense
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ai.chesssense.app.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: ChessSense
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: XKAAC8TL59
+        SWIFT_VERSION: "5.0"
 
   ChessSenseBroadcast:
     type: app-extension
@@ -101,7 +121,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: XKAAC8TL59
         MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "5"
+        CURRENT_PROJECT_VERSION: "6"
         SWIFT_VERSION: "5.0"
 
   ChessSenseWidgets:
@@ -128,13 +148,13 @@ targets:
         SKIP_INSTALL: YES
         CODE_SIGN_STYLE: Automatic
         MARKETING_VERSION: "0.2.0"
-        CURRENT_PROJECT_VERSION: "5"
+        CURRENT_PROJECT_VERSION: "6"
     info:
       path: Widgets/Info.plist
       properties:
         CFBundleDisplayName: Best Move
         CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "5"
+        CFBundleVersion: "6"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
 

@@ -310,6 +310,19 @@ struct ContentView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("start-broadcast")
+
+            // Apple's own picker, unembellished and NOT wrapped in something else. Taps on
+            // its glyph start the broadcast directly, with no sheet of ours involved; this is
+            // the path Apple guarantees, kept as a fallback beside the traced button.
+            HStack(spacing: 10) {
+                BroadcastButton()
+                    .frame(width: 40, height: 40)
+                Text("System picker fallback")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
 
             Toggle("Watch the screen", isOn: Binding(
                 get: { continuous.active },
