@@ -54,24 +54,39 @@ enum BroadcastInfo {
 enum BroadcastStarter {
     /// Called with a message when the sheet could not be shown at all.
     static var onFailure: (@MainActor (String) -> Void)?
+    /// Every step of the attempt, so a silent failure can be read off the screen.
+    static var onLog: (@MainActor (String) -> Void)?
+
+    private static func log(_ message: String) {
+        NSLog("[chess-sense] broadcast: \(message)")
+        let line = message
+        Task { @MainActor in onLog?(line) }
+    }
 
     static func present() {
+        log("embedded: " + BroadcastInfo.diagnostics)
+        log("load(preferred) requested")
         RPBroadcastActivityViewController.load(
             withPreferredExtension: BroadcastInfo.extensionBundleIdentifier
         ) { controller, error in
             if let controller {
+                log("preferred returned a controller")
                 present(controller)
                 return
             }
             let first = error?.localizedDescription ?? "no controller"
+            log("preferred failed: " + first)
             // The preferred-extension load fails when iOS has not registered the extension
             // yet (a reboot is the usual cure). The generic sheet still works and shows
             // whatever the system knows about, so try it before giving up.
+            log("load(generic) requested")
             RPBroadcastActivityViewController.load { fallback, secondError in
                 if let fallback {
+                    log("generic returned a controller")
                     present(fallback)
                     return
                 }
+                log("generic failed: " + (secondError?.localizedDescription ?? "no controller"))
                 let message = "broadcast sheet unavailable (\(first); "
                     + "\(secondError?.localizedDescription ?? "no controller"))"
                 NSLog("[chess-sense] \(message)")
@@ -84,10 +99,14 @@ enum BroadcastStarter {
         controller.delegate = Presenter.shared
         Task { @MainActor in
             guard let host = topViewController() else {
+                log("no view controller to present from")
                 onFailure?("no view controller to present from")
                 return
             }
-            host.present(controller, animated: true)
+            log("presenting on " + String(describing: type(of: host)))
+            host.present(controller, animated: true) {
+                log("sheet presented")
+            }
         }
     }
 

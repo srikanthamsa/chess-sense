@@ -288,9 +288,13 @@ struct ContentView: View {
                 continuous.presentBroadcastSheet()
             } label: {
                 HStack(spacing: 14) {
-                    BroadcastButton()
+                    // A plain glyph, not RPSystemBroadcastPickerView: a UIKit control inside
+                    // a SwiftUI button label swallows the touch, so the button never fired.
+                    Image(systemName: "dot.radiowaves.left.and.right")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.tint)
                         .frame(width: 54, height: 54)
-                        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 13, style: .continuous)
                                 .strokeBorder(.secondary.opacity(0.25))
@@ -334,6 +338,19 @@ struct ContentView: View {
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
+            }
+
+            if !continuous.broadcastLog.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(continuous.broadcastLog, id: \.self) { line in
+                        Text(line)
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(8)
+                .background(.black.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
             }
         }
     }

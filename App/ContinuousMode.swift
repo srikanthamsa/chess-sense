@@ -18,6 +18,8 @@ final class ContinuousMode: ObservableObject {
     @Published private(set) var lastMove: String?
     /// Why the broadcast sheet could not open, if it could not.
     @Published var broadcastNote: String?
+    /// Step-by-step trace of the last attempt, newest last.
+    @Published var broadcastLog: [String] = []
     /// What this build actually embeds, shown so a missing extension is obvious.
     var embedded: String { BroadcastInfo.diagnostics }
 
@@ -37,6 +39,13 @@ final class ContinuousMode: ObservableObject {
     private var pendingSince: Date?
 
     func presentBroadcastSheet() {
+        broadcastLog = []
+        broadcastNote = nil
+        BroadcastStarter.onLog = { [weak self] message in
+            guard let self else { return }
+            self.broadcastLog.append(message)
+            if self.broadcastLog.count > 6 { self.broadcastLog.removeFirst() }
+        }
         BroadcastStarter.onFailure = { [weak self] message in
             self?.broadcastNote = message
         }
