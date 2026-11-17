@@ -20,8 +20,18 @@ final class ContinuousMode: ObservableObject {
     @Published var broadcastNote: String?
     /// Step-by-step trace of the last attempt, newest last.
     @Published var broadcastLog: [String] = []
+    @Published private(set) var taps = 0
     /// What this build actually embeds, shown so a missing extension is obvious.
     var embedded: String { BroadcastInfo.diagnostics }
+
+    /// Always visible: which build is running, how many taps landed, what is embedded.
+    /// Without this the only evidence was a blank card, which hid the difference between
+    /// "not the build you think" and "the tap never arrived".
+    var buildLine: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return "build \(version)(\(build)) · taps \(taps) · \(BroadcastInfo.diagnostics)"
+    }
 
     private var timer: Timer?
     private var keepAlive: AVAudioPlayer?
@@ -39,6 +49,7 @@ final class ContinuousMode: ObservableObject {
     private var pendingSince: Date?
 
     func presentBroadcastSheet() {
+        taps += 1
         broadcastLog = []
         broadcastNote = nil
         BroadcastStarter.onLog = { [weak self] message in

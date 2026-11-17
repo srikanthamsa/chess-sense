@@ -284,10 +284,7 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Button {
-                continuous.presentBroadcastSheet()
-            } label: {
-                HStack(spacing: 14) {
+            HStack(spacing: 14) {
                     // A plain glyph, not RPSystemBroadcastPickerView: a UIKit control inside
                     // a SwiftUI button label swallows the touch, so the button never fired.
                     Image(systemName: "dot.radiowaves.left.and.right")
@@ -310,8 +307,7 @@ struct ContentView: View {
                     Spacer()
                 }
                 .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
+                .onTapGesture { continuous.presentBroadcastSheet() }
 
             Toggle("Watch the screen", isOn: Binding(
                 get: { continuous.active },
@@ -327,6 +323,10 @@ struct ContentView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
+                Text(continuous.buildLine)
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.secondary)
+
                 if let note = continuous.broadcastNote, !note.isEmpty {
                     Text(note)
                         .font(.caption2)
