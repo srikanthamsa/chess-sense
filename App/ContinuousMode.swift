@@ -24,6 +24,7 @@ final class ContinuousMode: ObservableObject {
     @Published private(set) var taps = 0
     @Published private(set) var frames = 0
     @Published private(set) var lastAttempt: Date?
+    @Published private(set) var calibrated = false
     /// What this build actually embeds, shown so a missing extension is obvious.
     var embedded: String { BroadcastInfo.diagnostics }
 
@@ -57,6 +58,37 @@ final class ContinuousMode: ObservableObject {
     /// The board has to settle before it is worth an engine query.
     private let settleTime: TimeInterval = 0.45
     private var pendingSince: Date?
+
+    /// Learns the templates from a broadcast frame instead of a screenshot.
+    ///
+    /// Broadcast frames are a different pipeline: ReplayKit hands over a screen video at the
+    /// device's own resolution (883x1920 here, not the 1206x2622 of a screenshot), so the
+    /// squares are drawn ~110 px instead of ~150 and glyph edges carry video artefacts. A book
+    /// learned from a screenshot reads those frames at shape distance 14-20, past the
+    /// tolerance; a book learned from the same source reads them at 8.
+    ///
+    /// The caller must have the game's start position on screen, because calibration verifies
+    /// itself against that position.
+    func calibrateFromBroadcast() async {
+        guard let frame = mailbox.latest() else {
+            status = "No frames yet — start the broadcast"
+            return
+        }
+        status = "Learning this frame…"
+        do {
+            let verification = try AnalysisPipeline.calibrate(imageData: frame.image)
+            status = "Calibrated \(verification.rect.width)×\(verification.rect.height) · verified"
+            calibrated = true
+        } catch {
+            if case BoardError.boardNotFound = error {
+                status = "No board in the frame — show the game"
+            } else if case BoardError.verificationFailed = error {
+                status = "That is not a start position"
+            } else {
+                status = Self.describe(error)
+            }
+        }
+    }
 
     func presentBroadcastSheet() {
         taps += 1
@@ -164,8 +196,16 @@ final class ContinuousMode: ObservableObject {
             }
             lastAnalysedFEN = outcome.fen
         } catch {
-            status = "Read failed · \(error)"
+            status = Self.describe(error)
         }
+    }
+
+    /// The phone streams whatever is visible, so the most common "failure" is the game not
+    /// being on screen. Saying that plainly beats printing a geometry error.
+    static func describe(_ error: Error) -> String {
+        if case BoardError.boardNotFound = error { return "No board on screen — open the game" }
+        let text = "\(error)"
+        return text.count > 44 ? String(text.prefix(44)) : text
     }
 
     // MARK: - Keep alive

@@ -41,7 +41,7 @@ public struct FrameMailbox {
 /// Writes frames from inside the broadcast extension.
 public enum FramePublisher {
     public static func publish(_ buffer: CVPixelBuffer, sequence: Int) {
-        guard let jpeg = FramePublisher.jpeg(from: buffer, quality: 0.6) else { return }
+        guard let jpeg = FramePublisher.jpeg(from: buffer, quality: 0.5) else { return }
         let meta = AppGroup.Meta(
             sequence: sequence,
             capturedAt: Date().timeIntervalSince1970,
@@ -57,11 +57,16 @@ public enum FramePublisher {
         }
     }
 
+    /// Native scale. Half scale was tried first to save bytes, but a 55 px square after
+    /// downscale plus JPEG artefacts pushes the piece signature close to its tolerance;
+    /// fidelity of the thing being measured matters more than payload size.
+    private static let scale: CGFloat = 1.0
+
     private static func jpeg(from buffer: CVPixelBuffer, quality: CGFloat) -> Data? {
         let ciImage = CIImage(cvPixelBuffer: buffer)
-        // The board is drawn at full resolution; half scale keeps the signature channel
-        // stable (it is a proportion, not a pixel count) while cutting the payload ~4x.
-        let scaled = ciImage.transformed(by: CGAffineTransform(scaleX: 0.5, y: 0.5))
+        let scaled = scale == 1.0
+            ? ciImage
+            : ciImage.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
         let context = CIContext(options: [.useSoftwareRenderer: false])
         guard let cg = context.createCGImage(scaled, from: scaled.extent) else { return nil }
         return UIImage(cgImage: cg).jpegData(compressionQuality: quality)
