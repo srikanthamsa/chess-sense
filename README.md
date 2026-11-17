@@ -18,17 +18,38 @@ screenshot ──▶ locate board ──▶ classify 64 squares ──▶ FEN �
 | Square classifier | reads the starting position exactly, 13/13 templates learned from one frame |
 | Template calibration | self-verifying; rejects frames that disagree with the expected position |
 | Clean-room engine + tests | 13 tests green |
-| iOS app, Live Activity, App Intent | in progress |
-| Engine client (Lichess cloud eval) | in progress |
+| iOS app, Live Activity, App Intent | scaffolded, compiles in Xcode |
+| Engine client (Lichess cloud eval) | done, not yet exercised on device |
+| Move diffing / castling / en passant | not started |
 
 ## Quick start
 
 ```bash
-swift test                                   # 13 tests
-swift run chesssense-diag <screenshot.png>   # dump board rect, palette, templates, FEN
+swift test                                   # 13 tests, no Xcode session needed
+swift run chesssense-diag <screenshot.png>   # dump board rect, palette, per-square stats, FEN
+./scripts/verify.sh                          # tests + iOS-SDK typecheck of the app layer
 ```
 
 The test fixture is a real TakeTakeTake screenshot (`Tests/ChessSenseCoreTests/Fixtures/`).
+
+## Running it on a phone
+
+```bash
+xcodegen generate          # project.yml -> ChessSense.xcodeproj
+open ChessSense.xcodeproj
+```
+
+1. Set your team on both targets, run on the device.
+2. Screenshot a **fresh game** in TakeTakeTake, tap *Pick starting-position screenshot*.
+   It calibrates and verifies in one step; you should see `Calibrated ✓`.
+3. *Start Live Activity* — the Island shows `----` waiting state.
+4. In **Shortcuts**, build: `Take Screenshot` → `Best Move` (the app's intent).
+   Bind it to the Action Button or Back Tap. Screenshot mid-game, the move appears.
+
+The Dynamic Island shows the move as `from–to` (`e2–e4`) rather than SAN. That is
+deliberate for v1: SAN needs full legal-move generation for disambiguation, check and mate
+marks, and a wrong `Nf3` vs `Ngf3` is a worse bug than an unambiguous `b1–c3`. ChessKit for
+proper SAN is a one-file change once the pipeline is proven on device.
 
 ## How it works
 
@@ -133,13 +154,27 @@ Tests/ChessSenseCoreTests/
 
 ## Roadmap
 
-- [ ] iOS app target + Calibration screen (one screenshot, tap to confirm board rect)
-- [ ] Live Activity / Dynamic Island rendering of the best move
-- [ ] App Intent so the Action Button (or a Shortcut) triggers a background analyze
-- [ ] Engine: Lichess cloud eval, fallback to local Stockfish
+- [x] iOS app target + calibration from one screenshot
+- [x] Live Activity / Dynamic Island rendering of the best move
+- [x] App Intent so the Action Button (or a Shortcut) triggers a background analyze
+- [x] Engine: Lichess cloud eval (no key)
+- [ ] Fallback engine for positions not in Lichess's cache (~15% of middlegame)
+- [ ] Proper SAN via ChessKit
 - [ ] Move diffing + castling/en-passant tracking so only the FEN's board part comes from pixels
 - [ ] Optional: raw ReplayKit frames for continuous updates
 - [ ] Optional: DeepSeek for a one-line "why" in the expanded Island view
+
+## Verification status
+
+Green and repeatable: `swift test` (13 tests) and an iOS-17-simulator typecheck of the
+core plus every non-SwiftUI app file (`EngineClient`, `CalibrationStore`,
+`LiveActivityController`, `AnalysisPipeline`).
+
+Not yet verified: the SwiftUI surface (`ContentView`, the app entry point, the App Intent,
+the widget). Those expand macros through `swift-plugin-server`, which cannot start in a
+headless sandboxed build — open the project in Xcode to compile them. Nothing on this list
+has been run on a physical device yet, so the Island rendering, App Intent background
+execution and the real end-to-end latency are still unmeasured.
 
 ## Notes
 
