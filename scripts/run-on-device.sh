@@ -4,9 +4,8 @@
 #   ./scripts/run-on-device.sh            # build + install + launch
 #   ./scripts/run-on-device.sh --check    # only report what the Mac can see
 #
-# Signing: the team is already in project.yml, but Xcode still needs your Apple ID added
-# under Xcode > Settings > Accounts so a development profile can be created. Without that
-# xcodebuild fails with "No Accounts".
+# Signing: the team is in project.yml, but Xcode still needs your Apple ID under
+# Xcode > Settings > Accounts so a development profile can be created.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -14,35 +13,43 @@ CHECK_ONLY=0
 [[ "${1:-}" == "--check" ]] && CHECK_ONLY=1
 
 echo "== devices attached =="
-xcrun devicectl list devices 2>/dev/null | sed -n '1,2p;/physical/p'
+xcrun devicectl list devices 2>/dev/null | grep -E "Name|-----|iPhone|iPad" 
 
-# Columns: Name  Identifier(UDID)  State  Model  Reality
-read -r UDID NAME <<<"$(
+# Pick a wired iPhone: a row containing "iPhone", an identifier with "UDID", that is not
+# a simulator. Note the plain listing leaves the Reality column blank for real iPhones,
+# so filtering on "physical" misses them — that bug cost one round trip.
+UDID="$(
   xcrun devicectl list devices 2>/dev/null \
-  | awk '/physical/ && /iPhone/ && /available/ {
-      for (i = 1; i <= NF; i++) if ($i ~ /-/) { print $i, $0; exit }
-    }'
+  | awk '/iPhone/ && /UDID/ && !/simulated|shutdown/ { for (i=1;i<=NF;i++) if ($i ~ /^[0-9A-F]{8}-/) { print $i; exit } }'
 )"
 
 if [[ -z "${UDID:-}" ]]; then
   echo
-  echo "No available physical iPhone found."
-  echo "  - iPhone unlocked?"
-  echo "  - tapped 'Trust This Computer' on the phone?"
+  echo "No usable iPhone found. Check:"
+  echo "  - iPhone unlocked, and 'Trust This Computer' tapped"
   echo "  - Settings > Privacy & Security > Developer Mode > On (then restart)"
-  echo "  - data-capable cable / different USB port?"
-  echo
-  echo "Note: an iPad shows up here too, but iPads have no Dynamic Island and no Action"
-  echo "Button, so the app's whole point needs the iPhone."
+  echo "  - data-capable cable / a different USB port"
   exit 1
 fi
 
 echo
-echo "iPhone: $NAME"
-echo "UDID:   $UDID"
+echo "iPhone UDID: $UDID"
+
+# Developer Mode is the single most common blocker and devicectl reports it precisely.
+DETAILS="$(xcrun devicectl device info details --device "$UDID" 2>&1 || true)"
+if grep -qi "Developer Mode is turned off" <<<"$DETAILS"; then
+  echo
+  echo "BLOCKED: Developer Mode is off on the iPhone."
+  echo "  Settings > Privacy & Security > Developer Mode > On, then restart the phone."
+  echo "  (Developer Mode only appears after the device has been connected once.)"
+  exit 2
+fi
+grep -E "Device State|Transport Type|OS Version|Marketing Name" <<<"$DETAILS" | sed 's/^[[:space:]]*/  /' || true
+
 [[ $CHECK_ONLY -eq 1 ]] && exit 0
 
-BUNDLE_ID="$(grep -o 'ai\.chesssense\.app[^ ]*' project.yml | head -1)"
+BUNDLE_ID="$(sed -n 's/.*PRODUCT_BUNDLE_IDENTIFIER: \(ai\.chesssense\.app\).*/\1/p' project.yml | head -1)"
+BUNDLE_ID="${BUNDLE_ID:-ai.chesssense.app}"
 APP_PATH=".build/dd/Build/Products/Debug-iphoneos/ChessSense.app"
 
 echo
