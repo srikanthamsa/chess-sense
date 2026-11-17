@@ -42,9 +42,16 @@ final class LocalStockfishBackend: EngineBackend, @unchecked Sendable {
     /// (its own thread, ~50 ms, plus Stockfish's init) is already paid for by the time a
     /// screenshot arrives. The shutter-to-answer delay is dominated by things like this that
     /// happen once, not by the search.
+    /// Starts the engine now rather than on the first screenshot.
+    ///
+    /// This used to wrap the boot in `withUnsafeMutablePointer(to: &self.started)`, which is a
+    /// mutable access to the same property the boot path touches -- Swift's exclusivity check
+    /// aborted the process on launch (EXC_CRASH/SIGABRT in LocalStockfishBackend.boot).
+    /// Boot runs on the engine's serial queue instead, so there is one owner and no aliasing.
     func warmUp() {
-        queue.async {
-            try? withUnsafeMutablePointer(to: &self.started) { _ in _ = self.tryBoot() }
+        queue.async { [weak self] in
+            guard let self else { return }
+            _ = try? self.boot()
         }
     }
 
