@@ -54,6 +54,16 @@ BUNDLE_ID="${BUNDLE_ID:-ai.snse.app}"
 APP_PATH=".build/dd/Build/Products/Debug-iphoneos/SNSE.app"
 
 echo
+echo "== generate =="
+# project.yml is the source of truth: without this, version bumps and new files never
+# reach the build, and the phone keeps reporting a stale CFBundleVersion.
+if command -v xcodegen >/dev/null 2>&1; then
+  TMPDIR="$(pwd)/.build/tmp" xcodegen generate | tail -1
+else
+  echo "xcodegen not installed; using the existing project"
+fi
+
+echo
 echo "== build =="
 xcodebuild -project SNSE.xcodeproj -scheme SNSE \
   -destination "id=$UDID" -derivedDataPath .build/dd \
