@@ -492,7 +492,8 @@ struct ContentView: View {
             lastWhy = outcome.why.isEmpty ? nil : outcome.why
         }
 
-        needsCalibration = false
+        // Any failed read gets the fix on screen: the bar trades LIVE for CALIBRATE.
+        needsCalibration = outcome.move == nil
         if let move = outcome.move {
             headline = move.displayMove
             subline = outcome.trackingNote.isEmpty ? "Best move in this position."

@@ -136,7 +136,7 @@ public enum BoardError: Error, CustomStringConvertible {
         case .boardNotFound:
             return "No chess board found there. Screenshot the whole game."
         case .differentBoard:
-            return "Different board than your calibration. Calibrate for this one."
+            return "New board. Open a new game and calibrate once from its start position."
         case .implausibleRect, .inconsistentCalibration, .unknownSquare, .verificationFailed:
             return "Couldn't read that board. Screenshot it again."
         }
