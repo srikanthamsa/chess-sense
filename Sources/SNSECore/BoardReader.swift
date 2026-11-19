@@ -49,7 +49,22 @@ public enum BoardReader {
         // end of the pixel buffer -- that crashed the app on the first streamed frame.
         // Accept it only when it still fits this image; otherwise locate the board again.
         let supplied = rect.flatMap { fits($0, in: image) ? $0 : nil }
-        guard let board = supplied ?? BoardLocator.locate(image) ?? BoardLocator.locateGeneric(image) else {
+        let located = BoardLocator.locate(image) ?? BoardLocator.locateGeneric(image)
+        // A stored rect is a fast path only. The phone keeps the rect from whichever board was
+        // last calibrated, and a lichess grid sits 96 px below a TakeTakeTake one in the same
+        // screenshot -- an offset small enough that every colour check still passes while every
+        // square samples two squares at once. If the locator disagrees with the stored rect,
+        // the locator wins: it is looking at the frame, the rect is a memory of a different one.
+        let board: BoardRect
+        switch (supplied, located) {
+        case let (s?, l?):
+            let drift = max(abs(s.x - l.x), abs(s.y - l.y), abs(s.width - l.width))
+            board = drift > 4 ? l : s
+        case let (s?, nil):
+            board = s
+        case let (nil, l?):
+            board = l
+        case (nil, nil):
             throw BoardError.boardNotFound
         }
         let palette = BoardPalette.estimate(image: image, rect: board)
@@ -142,7 +157,7 @@ public enum BoardReader {
         // resolution, so a rect learned from a full-resolution screenshot indexes past the
         // end of the pixel buffer -- that crashed the app on the first streamed frame.
         // Accept it only when it still fits this image; otherwise locate the board again.
-        let supplied = rect.flatMap { fits($0, in: image) ? $0 : nil }
+        var supplied = rect.flatMap { fits($0, in: image) ? $0 : nil }
         guard let board = supplied ?? BoardLocator.locate(image) ?? BoardLocator.locateGeneric(image) else {
             throw BoardError.boardNotFound
         }

@@ -58,7 +58,7 @@ enum AnalysisPipeline {
         var read: BoardRead
         do {
             read = try BoardReader.read(image: image, book: book, rect: store.loadRect())
-        } catch BoardError.differentBoard {
+        } catch BoardError.differentBoard, BoardError.unknownSquare, BoardError.verificationFailed {
             // A different chess site means different squares, and no amount of matching will
             // reconcile them. If this frame is a starting position, learn the board from it and
             // read again -- the user asked for the answer, not for a calibration lesson.
