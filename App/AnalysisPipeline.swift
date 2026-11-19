@@ -185,7 +185,7 @@ enum AnalysisPipeline {
                     return ""
                 } ?? "",
                 tip: explained.map {
-                    MoveExplainer.islandTip(move: $0, in: position, evalText: move.evalText)
+                    MoveExplainer.order(move: $0, in: position, evalText: move.evalText)
                 } ?? "",
                 timings: describe(read: readMs, track: trackMs,
                                   engine: Date().timeIntervalSince(engineStart),

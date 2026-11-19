@@ -149,10 +149,18 @@ public struct PieceBadge: View {
         self.diameter = diameter
     }
 
-    /// No tile behind the art. The pieces are transparent graphics; a filled square behind
-    /// them reads as a coloured block, which is what the island was showing.
+    /// The piece sits on a cream square, like it would on a board.
+    ///
+    /// The art is black-and-white line art with transparent backgrounds, so a black rook on the
+    /// island's black surface disappears entirely. The square is the light board square, which
+    /// gives every piece something to sit on and reads as chess rather than as a coloured tile.
     public var body: some View {
-        IslandPiece(symbol: symbol, size: diameter)
+        RoundedRectangle(cornerRadius: diameter * 0.22, style: .continuous)
+            .fill(Theme.squareLight)
+            .frame(width: diameter, height: diameter)
+            .overlay(
+                IslandPiece(symbol: symbol, size: diameter * 0.78)
+            )
     }
 }
 
@@ -237,16 +245,13 @@ public struct IslandCompactLeading: View {
 
     public var body: some View {
         ZStack {
-            if presentation == .pending {
-                ProgressRing(value: 0.62, lineWidth: 2, tint: Theme.gold, track: Theme.line)
-                    .frame(width: 16, height: 16)
-            } else if presentation == .rejected {
+            if presentation == .rejected {
                 Image(systemName: "exclamationmark")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(Theme.gold)
             } else {
-                // The piece on its own: no tile behind it. The art is transparent, so a
-                // background here reads as a coloured square inside the island.
+                // Always the knight mark while waiting: a chess app should never show a
+                // download ring, and this is the one glyph that says what the app is.
                 IslandPiece(symbol: symbol.isEmpty ? "N" : symbol, size: 19)
             }
         }
@@ -381,37 +386,71 @@ public struct IslandExpandedDetail: View {
     public init(state: BestMoveAttributes.ContentState) { self.state = state }
 
     private var presentation: IslandPresentation { IslandPresentation(state) }
-    private var accent: Color { IslandAccent.resolve(state) }
+
+    /// Where the pipeline is, for the segmented meter.
+    ///
+    /// Four beats: frame, track, search, answer. An Apple-style segmented progress reads as
+    /// "something is happening" without a spinner, and it becomes a scoreboard once the answer
+    /// lands -- the finished move is the fourth segment.
+    private var stage: Int {
+        switch presentation {
+        case .pending: return state.trusted ? 2 : 0
+        case .move, .rejected: return 3
+        }
+    }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            if presentation == .move {
-                HStack(alignment: .lastTextBaseline, spacing: 8) {
-                    Rectangle()
-                        .fill(accent)
-                        .frame(width: 2, height: 12)
-                        .offset(y: 1)
+        VStack(alignment: .leading, spacing: 9) {
+            // The move and the evaluation live in the Island's own leading/centre/trailing
+            // regions -- Apple's layout, and the reason the top of the island is never blank.
+            // Repeating them here made the card say everything twice.
+            Group {
+                if presentation == .pending {
+                    ShimmerText(state.why.isEmpty ? "Waiting for a screenshot" : state.why,
+                                size: 13)
+                } else if presentation == .rejected {
+                    Text(state.why.isEmpty ? "Frame the whole board and try again" : state.why)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.mute)
+                } else {
                     Text(state.why)
-                        .font(.system(size: Island.whySize, weight: .regular))
-                        .lineSpacing(1.5)
-                        .foregroundStyle(Theme.ink.opacity(0.82))
+                        .font(.system(size: 13.5, weight: .regular))
+                        .lineSpacing(2)
+                        .foregroundStyle(Theme.ink.opacity(0.85))
                         .lineLimit(2)
                         .truncationMode(.tail)
-                    Spacer(minLength: 0)
                 }
-                AdvantageBar(evalText: state.youEval, height: 3, tint: advantageTint(state.youEval))
-                    .frame(maxWidth: 150)
-            } else if presentation == .pending {
-                HStack(spacing: 6) {
-                    ShimmerText("Reading the board", size: 12)
-                    Spacer(minLength: 0)
-                }
-            } else {
-                Text("Frame the whole board and try again")
-                    .font(.system(size: Island.whySize))
-                    .foregroundStyle(Theme.mute)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+
+            SegmentMeter(stage: stage, count: 4, tint: Theme.good)
+                .frame(height: 3)
+        }
+    }
+}
+
+/// Four thin segments, the current one lit. No spinner anywhere.
+public struct SegmentMeter: View {
+    let stage: Int
+    let count: Int
+    let tint: Color
+
+    public init(stage: Int, count: Int = 4, tint: Color) {
+        self.stage = stage
+        self.count = count
+        self.tint = tint
+    }
+
+    public var body: some View {
+        HStack(spacing: 4) {
+            ForEach(0..<count, id: \.self) { index in
+                Capsule()
+                    .fill(index == stage ? tint : Theme.line)
+                    .frame(height: index == stage ? 3 : 2)
+                    .frame(maxWidth: .infinity)
             }
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.72), value: stage)
     }
 }
 

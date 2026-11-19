@@ -232,4 +232,62 @@ public enum MoveExplainer {
         default: return value > 0 ? "You are winning comfortably." : "You are in real trouble."
         }
     }
+
+    // MARK: - Ordering copy
+
+    /// The short form the Island shows: the square to play, then what the position is worth.
+    ///
+    /// A player glancing at a locked phone wants an instruction and a verdict, not a
+    /// description of the piece. "Move your rook to b8, terrible position, can't win unless
+    /// opponent blunders" says both in one breath.
+    public static func order(
+        move: Move,
+        in position: ChessPosition,
+        evalText: String?
+    ) -> String {
+        var kind: PieceKind = .pawn
+        if case let .piece(k, _) = position.board[move.from] { kind = k }
+
+        let verb: String
+        if move.promotion != nil {
+            verb = "Promote on \(squareName(move.to))"
+        } else if move.isCastle {
+            verb = "Castle"
+        } else if capturedPiece(for: move, in: position) != nil {
+            verb = "Take on \(squareName(move.to)) with your \(pieceName(kind))"
+        } else {
+            verb = "Move your \(pieceName(kind)) to \(squareName(move.to))"
+        }
+
+        let after = position.applying(move)
+        if after.isInCheck && MoveGenerator.legalMoves(in: after).isEmpty {
+            return "\(verb) — checkmate."
+        }
+        return "\(verb), \(verdict(for: evalText))"
+    }
+
+    /// Plain-English worth of the position, from the mover's point of view.
+    public static func verdict(for evalText: String?) -> String {
+        guard let text = evalText?.trimmingCharacters(in: .whitespaces), !text.isEmpty else {
+            return "position unclear"
+        }
+        if text.hasPrefix("#") || text.contains("M") && text.count <= 3 {
+            return text.hasPrefix("-") ? "lost, mate is coming"
+                                      : "winning, mate is coming"
+        }
+        guard let value = Double(text.replacingOccurrences(of: "+", with: "")) else {
+            return "position unclear"
+        }
+        // Centipawns when the sign is small enough to be a score, pawns otherwise.
+        let pawns = abs(value) > 20 ? value / 100 : value
+        switch pawns {
+        case ..<(-4): return "terrible position, can't win unless opponent blunders"
+        case ..<(-1.5): return "losing, you need a mistake from them"
+        case ..<(-0.4): return "slightly worse, hold what you have"
+        case ..<0.4: return "about equal, keep developing"
+        case ..<1.5: return "slightly better, keep the pressure on"
+        case ..<4: return "better, don't give the advantage back"
+        default: return "winning, convert it slowly"
+        }
+    }
 }
