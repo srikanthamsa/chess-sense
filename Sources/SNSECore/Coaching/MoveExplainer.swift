@@ -263,11 +263,14 @@ public enum MoveExplainer {
         if after.isInCheck && MoveGenerator.legalMoves(in: after).isEmpty {
             return "\(verb) — checkmate."
         }
-        return "\(verb), \(verdict(for: evalText))"
+        return "\(verb), \(worth(for: evalText))"
     }
 
     /// Plain-English worth of the position, from the mover's point of view.
-    public static func verdict(for evalText: String?) -> String {
+    ///
+    /// Named `worth`, not `verdict`: an existing `verdict(for:)` is spoken by the coaching line
+    /// and its wording is asserted by tests. Overloading it silently changed every sentence.
+    public static func worth(for evalText: String?) -> String {
         guard let text = evalText?.trimmingCharacters(in: .whitespaces), !text.isEmpty else {
             return "position unclear"
         }

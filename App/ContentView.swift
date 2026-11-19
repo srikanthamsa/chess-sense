@@ -458,7 +458,14 @@ struct ContentView: View {
         lastMove = outcome.move?.displayMove
         lastMoveUCI = outcome.move?.uci
         lastEval = outcome.move.map { outcome.playerEval.isEmpty ? $0.evalText : outcome.playerEval }
-        lastWhy = outcome.why.isEmpty ? nil : outcome.why
+        // The order and the verdict, not a description of the piece -- the same sentence the
+        // island uses, so the phone and the app never disagree about what to say.
+        if let mover = outcome.explainedMove {
+            lastWhy = MoveExplainer.order(move: mover, in: outcome.position,
+                                          evalText: outcome.move?.evalText)
+        } else {
+            lastWhy = outcome.why.isEmpty ? nil : outcome.why
+        }
 
         if let move = outcome.move {
             headline = move.displayMove
