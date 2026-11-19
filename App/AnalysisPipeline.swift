@@ -235,7 +235,7 @@ enum AnalysisPipeline {
     /// fails here and the honest "calibrate for this board" message survives.
     private static func relearn(from image: PixelImage, store: CalibrationStore) throws -> BoardRead {
         let (book, rect, verification) = try BoardReader.calibrate(image: image)
-        store.save(book: book, rect: rect)
+        try store.save(book: book, rect: rect)
         store.resetTracking()
         _ = verification
         return try BoardReader.read(image: image, book: book, rect: rect)
