@@ -58,6 +58,19 @@ enum AnalysisPipeline {
         var read: BoardRead
         do {
             read = try BoardReader.read(image: image, book: book, rect: store.loadRect())
+        } catch BoardError.differentBoard {
+            // A different chess site means different squares, and no amount of matching will
+            // reconcile them. If this frame is a starting position, learn the board from it and
+            // read again -- the user asked for the answer, not for a calibration lesson.
+            guard let relearned = try? relearn(from: image, store: store) else {
+                Diagnostics.record(image: image, reason: "different-board", book: book,
+                                   rectOverride: store.loadRect())
+                throw BoardError.differentBoard(
+                    calibrated: book.lightRGB.map { "rgb(\($0[0]),\($0[1]),\($0[2]))" } ?? "?",
+                    found: "this frame"
+                )
+            }
+            read = relearned
         } catch {
             // Keep the frame so the failure can be turned into a test instead of a guess.
             Diagnostics.record(image: image, reason: "\(error)", book: book,
@@ -215,6 +228,19 @@ enum AnalysisPipeline {
 
     /// Re-learns the templates from the frame that just failed, anchored to the last position
     /// the tracker knew (or the start position on a fresh game), then reads it back.
+    /// Learn this frame as a new board, then read it.
+    ///
+    /// Only succeeds when the frame actually is a starting position, because calibration
+    /// verifies itself: it reads the position back and compares. A mid-game frame therefore
+    /// fails here and the honest "calibrate for this board" message survives.
+    private static func relearn(from image: PixelImage, store: CalibrationStore) throws -> BoardRead {
+        let (book, rect, verification) = try BoardReader.calibrate(image: image)
+        store.save(book: book, rect: rect)
+        store.resetTracking()
+        _ = verification
+        return try BoardReader.read(image: image, book: book, rect: rect)
+    }
+
     private static func autoHeal(
         from image: PixelImage,
         store: CalibrationStore

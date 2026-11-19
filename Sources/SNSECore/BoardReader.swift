@@ -53,6 +53,7 @@ public enum BoardReader {
             throw BoardError.boardNotFound
         }
         let palette = BoardPalette.estimate(image: image, rect: board)
+        try checkTheme(book: book, palette: palette)
         let sigs = SquareExtractor.extract(image: image, rect: board, palette: palette)
         let orientation = OrientationDetector.detect(image: image, rect: board, palette: palette)
 
@@ -151,10 +152,12 @@ public enum BoardReader {
         // If the calibration frame is shown from Black's side, the signatures are rotated
         // relative to the standard placement array; rotate the expectation to match.
         let aligned = orientation.isFlipped ? rotated180(placement) : placement
-        let book = try TemplateBook.bootstrap(
+        var book = try TemplateBook.bootstrap(
             signatures: sigs, placement: aligned,
             squareSize: Double(board.width) / 8
         )
+        book.lightRGB = [palette.light.r, palette.light.g, palette.light.b]
+        book.darkRGB = [palette.dark.r, palette.dark.g, palette.dark.b]
         let verification = try read(image: image, book: book, rect: board)
 
         let expected = FEN.encode(aligned)
@@ -242,4 +245,25 @@ public enum FEN {
         return ranks.joined(separator: "/")
             + " \(turn) \(castle) \(enPassant) \(halfmove) \(fullmove)"
     }
+
+
 }
+
+    /// Is this frame even the board the templates were learned on?
+    ///
+    /// Deliberately generous: it only fires when the *light* square or the *dark* square is off
+    /// by more than 45 on any channel, which is a different board rather than a different
+    /// screenshot of the same one. Anything subtler is left to the matcher to judge.
+func checkTheme(book: TemplateBook, palette: BoardPalette) throws {
+        guard let light = book.lightRGB, let dark = book.darkRGB,
+              light.count == 3, dark.count == 3 else { return }
+        func worst(_ a: [Int], _ b: RGB) -> Int {
+            max(abs(a[0] - b.r), abs(a[1] - b.g), abs(a[2] - b.b))
+        }
+        let delta = max(worst(light, palette.light), worst(dark, palette.dark))
+        guard delta > 45 else { return }
+        throw BoardError.differentBoard(
+            calibrated: "rgb(\(light[0]),\(light[1]),\(light[2]))",
+            found: "rgb(\(palette.light.r),\(palette.light.g),\(palette.light.b))"
+        )
+    }

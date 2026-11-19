@@ -100,6 +100,7 @@ public enum BoardError: Error, CustomStringConvertible {
     case inconsistentCalibration(square: String, expected: Piece, got: Piece)
     case unknownSquare(rank: Int, file: Int, bestDistance: Int)
     case verificationFailed(expected: String, got: String)
+    case differentBoard(calibrated: String, found: String)
 
     public var description: String {
         switch self {
@@ -112,6 +113,8 @@ public enum BoardError: Error, CustomStringConvertible {
         case let .unknownSquare(rank, file, best):
             return "no template matched \(BoardRect.squareName(rank: rank, file: file)) "
                 + "(closest shape distance \(best))"
+        case let .differentBoard(c, f):
+            return "this board looks different from your calibration (\(c) vs \(f))"
         case let .verificationFailed(expected, got):
             return "calibration did not reproduce the frame: expected \(expected), got \(got)"
         }
@@ -132,6 +135,8 @@ public enum BoardError: Error, CustomStringConvertible {
             return "Pick a starting-position screenshot first."
         case .boardNotFound:
             return "No chess board found there. Screenshot the whole game."
+        case .differentBoard:
+            return "Different board than your calibration. Calibrate for this one."
         case .implausibleRect, .inconsistentCalibration, .unknownSquare, .verificationFailed:
             return "Couldn't read that board. Screenshot it again."
         }

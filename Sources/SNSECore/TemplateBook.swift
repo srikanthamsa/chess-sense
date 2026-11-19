@@ -35,6 +35,13 @@ public struct TemplateBook: Sendable, Codable {
     /// weight enough that a screenshot-trained book misreads broadcast squares *confidently*
     /// rather than failing loudly. Recording the scale lets a read say why it is unreliable.
     public var squareSize: Double?
+    /// The two square colours seen at calibration, packed as [r, g, b].
+    ///
+    /// A book learned on one board says nothing about another: lavender templates will not
+    /// match a green board, and the failure looks like "it does not read" rather than "wrong
+    /// board". Recording the palette lets a read say that plainly.
+    public var lightRGB: [Int]?
+    public var darkRGB: [Int]?
     public let createdAt: Date
 
     public init(
@@ -42,12 +49,16 @@ public struct TemplateBook: Sendable, Codable {
         maxShapeDistance: Int,
         maxColorDistance: Double,
         squareSize: Double? = nil,
+        lightRGB: [Int]? = nil,
+        darkRGB: [Int]? = nil,
         createdAt: Date = Date()
     ) {
         self.entries = entries
         self.maxShapeDistance = maxShapeDistance
         self.maxColorDistance = maxColorDistance
         self.squareSize = squareSize
+        self.lightRGB = lightRGB
+        self.darkRGB = darkRGB
         self.createdAt = createdAt
     }
 
