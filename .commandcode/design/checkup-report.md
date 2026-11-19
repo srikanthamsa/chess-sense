@@ -1,4 +1,4 @@
-# chess-sense — design checkup (fixed)
+# snse — design checkup (fixed)
 
 **Mode** `checkup` → fixes applied · **Date** 2026-11-17 · **Scope** iOS app UI (`App/ContentView.swift`), the Live Activity (`Shared/IslandViews.swift`, `Widgets/BestMoveWidgets.swift`), the App Intent (`App/AnalyzeBoardIntent.swift`), and the Island design studio (`App/DesignStudioView.swift`).
 
@@ -68,7 +68,7 @@ That is the animation genuinely stopping, not just a branch that compiles.
 |---|---|---|
 | `BEST MOVE` / `UNCLEAR` | 2.75:1 | **7.45:1** |
 | provenance | 2.72:1 | **6.06:1** |
-| `chess-sense` header (untouched) | 4.77:1 | 5.26:1 |
+| `snse` header (untouched) | 4.77:1 | 5.26:1 |
 
 ---
 
@@ -94,7 +94,7 @@ That is the animation genuinely stopping, not just a branch that compiles.
 
 ## An unlisted defect found while verifying
 
-`SelfTest` was dead code. Commit `3555511` ("Plain-English coaching line, premium Island, redesigned app UI") deleted the `.task { guard SelfTest.requested … }` hook from `ContentView`, so `-chesssense-selftest` had been a silent no-op and the README's self-test instructions did nothing. Restored the hook in `ContentView.swift:58-68`.
+`SelfTest` was dead code. Commit `3555511` ("Plain-English coaching line, premium Island, redesigned app UI") deleted the `.task { guard SelfTest.requested … }` hook from `ContentView`, so `-snse-selftest` had been a silent no-op and the README's self-test instructions did nothing. Restored the hook in `ContentView.swift:58-68`.
 
 This also corrects my first report: the `SELFTEST RESULT PASSED` I quoted there was a stale report file left in the simulator container by an earlier run, not a fresh execution. The runs quoted above are fresh, from a clean install, and the report timestamp moves with each launch.
 

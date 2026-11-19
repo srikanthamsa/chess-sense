@@ -1,6 +1,6 @@
-name: ChessSense
+name: SNSE
 options:
-  bundleIdPrefix: ai.chesssense
+  bundleIdPrefix: ai.snse
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -20,7 +20,7 @@ settings:
     DEVELOPMENT_TEAM: XKAAC8TL59
 
 targets:
-  ChessSense:
+  SNSE:
     type: application
     platform: iOS
     sources:
@@ -29,7 +29,7 @@ targets:
       # The core is compiled straight into the targets rather than resolved as a local
       # SwiftPM package: it keeps `swift test` authoritative for the algorithm while
       # avoiding a package graph in the Xcode project.
-      - path: Sources/ChessSenseCore
+      - path: Sources/SNSECore
       - path: Resources/Fixtures
         buildPhase: resources
       - path: Resources/Fonts
@@ -40,9 +40,9 @@ targets:
         type: group
     scheme:
       testTargets:
-        - ChessSenseUITests
+        - SNSEUITests
     dependencies:
-      - target: ChessSenseWidgets
+      - target: SNSEWidgets
         embed: true
     settings:
       base:
@@ -54,9 +54,9 @@ targets:
         GCC_ENABLE_CPP_RTTI: NO
         HEADER_SEARCH_PATHS:
           - $(SRCROOT)/Vendor/Stockfish
-        SWIFT_OBJC_BRIDGING_HEADER: App/ChessSense-Bridging-Header.h
+        SWIFT_OBJC_BRIDGING_HEADER: App/SNSE-Bridging-Header.h
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        PRODUCT_BUNDLE_IDENTIFIER: ai.chesssense.app
+        PRODUCT_BUNDLE_IDENTIFIER: ai.snse.app
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: App/Info.plist
         CODE_SIGN_STYLE: Automatic
@@ -65,7 +65,7 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: chess-sense
+        CFBundleDisplayName: SNSE
         CFBundleShortVersionString: "0.2.0"
         CFBundleVersion: "21"
         UILaunchScreen: {}
@@ -78,30 +78,30 @@ targets:
         NSSupportsLiveActivities: true
         NSSupportsLiveActivitiesFrequentUpdates: true
 
-  ChessSenseUITests:
+  SNSEUITests:
     type: bundle.ui-testing
     platform: iOS
     deploymentTarget: "17.0"
     sources:
       - path: UITests
     dependencies:
-      - target: ChessSense
+      - target: SNSE
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ai.chesssense.app.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: ai.snse.app.uitests
         GENERATE_INFOPLIST_FILE: YES
-        TEST_TARGET_NAME: ChessSense
+        TEST_TARGET_NAME: SNSE
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: XKAAC8TL59
         SWIFT_VERSION: "5.0"
 
-  ChessSenseWidgets:
+  SNSEWidgets:
     type: app-extension
     platform: iOS
     sources:
       - path: Widgets
       - path: Shared
-      - path: Sources/ChessSenseCore
+      - path: Sources/SNSECore
     settings:
       base:
         CLANG_CXX_LANGUAGE_STANDARD: c++11
@@ -112,8 +112,8 @@ targets:
         GCC_ENABLE_CPP_RTTI: NO
         HEADER_SEARCH_PATHS:
           - $(SRCROOT)/Vendor/Stockfish
-        SWIFT_OBJC_BRIDGING_HEADER: App/ChessSense-Bridging-Header.h
-        PRODUCT_BUNDLE_IDENTIFIER: ai.chesssense.app.widgets
+        SWIFT_OBJC_BRIDGING_HEADER: App/SNSE-Bridging-Header.h
+        PRODUCT_BUNDLE_IDENTIFIER: ai.snse.app.widgets
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Widgets/Info.plist
         SKIP_INSTALL: YES
@@ -123,17 +123,17 @@ targets:
     info:
       path: Widgets/Info.plist
       properties:
-        CFBundleDisplayName: Best Move
+        CFBundleDisplayName: SNSE
         CFBundleShortVersionString: "0.2.0"
         CFBundleVersion: "21"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
 
 schemes:
-  ChessSense:
+  SNSE:
     build:
       targets:
-        ChessSense: all
+        SNSE: all
     run:
       config: Debug
     test:

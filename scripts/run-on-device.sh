@@ -49,13 +49,13 @@ grep -E "Device State|Transport Type|OS Version|Marketing Name" <<<"$DETAILS" | 
 
 [[ $CHECK_ONLY -eq 1 ]] && exit 0
 
-BUNDLE_ID="$(sed -n 's/.*PRODUCT_BUNDLE_IDENTIFIER: \(ai\.chesssense\.app\).*/\1/p' project.yml | head -1)"
-BUNDLE_ID="${BUNDLE_ID:-ai.chesssense.app}"
-APP_PATH=".build/dd/Build/Products/Debug-iphoneos/ChessSense.app"
+BUNDLE_ID="$(sed -n 's/.*PRODUCT_BUNDLE_IDENTIFIER: \(ai\.snse\.app\).*/\1/p' project.yml | head -1)"
+BUNDLE_ID="${BUNDLE_ID:-ai.snse.app}"
+APP_PATH=".build/dd/Build/Products/Debug-iphoneos/SNSE.app"
 
 echo
 echo "== build =="
-xcodebuild -project ChessSense.xcodeproj -scheme ChessSense \
+xcodebuild -project SNSE.xcodeproj -scheme SNSE \
   -destination "id=$UDID" -derivedDataPath .build/dd \
   -allowProvisioningUpdates \
   OTHER_SWIFT_FLAGS='-disable-sandbox' \

@@ -2,8 +2,8 @@ import Foundation
 
 /// In-app end-to-end check, runnable without a single tap.
 ///
-/// Launch with `-chesssense-selftest` (Xcode scheme argument, or
-/// `simctl launch --console <udid> <bundle-id> -chesssense-selftest`) and the app reads the
+/// Launch with `-snse-selftest` (Xcode scheme argument, or
+/// `simctl launch --console <udid> <bundle-id> -snse-selftest`) and the app reads the
 /// bundled TakeTakeTake screenshot, calibrates, analyses it against the live engine, tries
 /// the Live Activity, prints a report to stdout and shows it on screen.
 ///
@@ -11,7 +11,7 @@ import Foundation
 /// and ActivityKit — which unit tests on macOS cannot. It uses its own UserDefaults suite
 /// so it never disturbs a real calibration.
 enum SelfTest {
-    static let argument = "-chesssense-selftest"
+    static let argument = "-snse-selftest"
 
     static var requested: Bool {
         CommandLine.arguments.contains(argument)
@@ -54,8 +54,8 @@ enum SelfTest {
             return "wall \(wall) ms · \(outcome.timings)"
         }
 
-        let defaults = UserDefaults(suiteName: "chesssense.selftest") ?? .standard
-        defaults.removePersistentDomain(forName: "chesssense.selftest")
+        let defaults = UserDefaults(suiteName: "snse.selftest") ?? .standard
+        defaults.removePersistentDomain(forName: "snse.selftest")
         let store = CalibrationStore(defaults: defaults)
 
         await check("bundle fixture") {

@@ -2,22 +2,22 @@
 import PackageDescription
 
 let package = Package(
-    name: "ChessSenseCore",
+    name: "SNSECore",
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
-        .library(name: "ChessSenseCore", targets: ["ChessSenseCore"]),
-        .executable(name: "chesssense-diag", targets: ["chesssense-diag"]),
+        .library(name: "SNSECore", targets: ["SNSECore"]),
+        .executable(name: "snse-diag", targets: ["snse-diag"]),
     ],
     targets: [
-        .target(name: "ChessSenseCore"),
+        .target(name: "SNSECore"),
         .executableTarget(
-            name: "chesssense-diag",
-            dependencies: ["ChessSenseCore"],
-            path: "Sources/chesssense-diag"
+            name: "snse-diag",
+            dependencies: ["SNSECore"],
+            path: "Sources/snse-diag"
         ),
         .testTarget(
-            name: "ChessSenseCoreTests",
-            dependencies: ["ChessSenseCore"],
+            name: "SNSECoreTests",
+            dependencies: ["SNSECore"],
             resources: [.copy("Fixtures")]
         ),
     ]

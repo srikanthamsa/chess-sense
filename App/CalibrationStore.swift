@@ -7,10 +7,10 @@ import Foundation
 /// shared App Group container once a widget needs to read calibration on its own.
 struct CalibrationStore {
     private enum Keys {
-        static let book = "chesssense.templateBook.v1"
-        static let rect = "chesssense.boardRect.v1"
-        static let calibratedAt = "chesssense.calibratedAt.v1"
-        static let trackedFEN = "chesssense.trackedFEN.v1"
+        static let book = "snse.templateBook.v1"
+        static let rect = "snse.boardRect.v1"
+        static let calibratedAt = "snse.calibratedAt.v1"
+        static let trackedFEN = "snse.trackedFEN.v1"
     }
 
     private let defaults: UserDefaults

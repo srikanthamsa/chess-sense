@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Diagnostics screen for the on-device engine: how fast is it, really, on this phone.
-/// Reached with `-chesssense-engine YES` (or the Diagnostics row in the app).
+/// Reached with `-snse-engine YES` (or the Diagnostics row in the app).
 struct EngineProbeView: View {
     @State private var lines: [String] = []
     @State private var running = true

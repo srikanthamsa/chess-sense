@@ -6,7 +6,7 @@ import Security
 /// Deliberately not `UserDefaults`: an API key in a plist is readable by anything with
 /// access to the app container, including a backup.
 enum APIKeyStore {
-    private static let service = "ai.chesssense.deepseek"
+    private static let service = "ai.snse.deepseek"
     private static let account = "api-key"
 
     static var key: String? {

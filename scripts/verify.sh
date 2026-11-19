@@ -18,7 +18,7 @@ echo "== 2/2 build the whole app for the device (unsigned) =="
 # CODE_SIGNING_ALLOWED=NO keeps this machine-independent: no Apple ID, no device needed.
 mkdir -p .build/tmp
 TMPDIR="$PWD/.build/tmp" xcodebuild \
-  -project ChessSense.xcodeproj -scheme ChessSense \
+  -project SNSE.xcodeproj -scheme SNSE \
   -destination 'generic/platform=iOS' \
   -derivedDataPath .build/dd-generic \
   CODE_SIGNING_ALLOWED=NO \

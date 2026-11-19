@@ -7,7 +7,7 @@ import XCTest
 final class BroadcastButtonUITests: XCTestCase {
     func testStartBroadcastRowRegistersATap() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["-chesssense-ui-test", "YES"]
+        app.launchArguments = ["-snse-ui-test", "YES"]
         app.launch()
 
         let row = app.buttons["start-broadcast"]

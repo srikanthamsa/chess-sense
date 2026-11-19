@@ -590,7 +590,7 @@ public struct LockScreenCard: View {
     private var header: some View {
         HStack(spacing: 6) {
             CheckerMark(size: 3, gap: 2, tint: accent.opacity(0.7))
-            Text("chess-sense")
+            Text("snse")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.5))
             Spacer()

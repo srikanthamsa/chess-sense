@@ -50,7 +50,7 @@ struct BestMoveLiveActivity: Widget {
 }
 
 @main
-struct ChessSenseWidgets: WidgetBundle {
+struct SNSEWidgets: WidgetBundle {
     var body: some Widget {
         BestMoveLiveActivity()
     }

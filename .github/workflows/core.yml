@@ -18,7 +18,7 @@ jobs:
         run: |
           mkdir -p .build/tmp
           TMPDIR="$PWD/.build/tmp" xcodebuild \
-            -project ChessSense.xcodeproj -scheme ChessSense \
+            -project SNSE.xcodeproj -scheme SNSE \
             -destination 'generic/platform=iOS' \
             -derivedDataPath .build/dd-generic \
             CODE_SIGNING_ALLOWED=NO \

@@ -1,6 +1,6 @@
 <div align="center">
 
-# chess-sense — the best move, above the board
+# SNSE — the best move, above the board
 
 **Reads a chess board straight off the screen and puts Stockfish's best move in the Dynamic Island.
 No servers, no accounts, no cloud engine — the search runs on the phone.**
@@ -12,12 +12,12 @@ No servers, no accounts, no cloud engine — the search runs on the phone.**
 
 [**How it works**](#how-it-works) · [**What works**](#what-works) · [**Limits**](#limits) · [**Credits**](#credits)
 
-<img src="docs/img/app.jpg" alt="chess-sense showing the best move, the position it read, and a plain-English reason" width="360">
+<img src="docs/img/app.jpg" alt="snse showing the best move, the position it read, and a plain-English reason" width="360">
 
 </div>
 
 > [!NOTE]
-> chess-sense is a companion for the **TakeTakeTake** chess app on iOS. It is not affiliated with
+> snse is a companion for the **TakeTakeTake** chess app on iOS. It is not affiliated with
 > TakeTakeTake, chess.com or lichess. You supply your own board and your own game.
 
 > [!IMPORTANT]

@@ -18,7 +18,7 @@ enum Diagnostics {
 
     static var directory: URL {
         let base = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return base.appendingPathComponent("chesssense-frames", isDirectory: true)
+        return base.appendingPathComponent("snse-frames", isDirectory: true)
     }
 
     @discardableResult

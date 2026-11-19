@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>chess-sense - Checkup Report</title>
+	<title>snse - Checkup Report</title>
 	<script src="https://cdn.tailwindcss.com"></script>
 	<style>
 		body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
@@ -21,7 +21,7 @@
 			<div class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
 				<div>
 					<div class="mono mb-2 text-xs tracking-widest text-[#666]">// CHECKUP — REMEDIATED</div>
-					<h1 class="text-4xl font-bold tracking-tight md:text-6xl">chess-sense</h1>
+					<h1 class="text-4xl font-bold tracking-tight md:text-6xl">snse</h1>
 					<p class="mono mt-3 text-xs text-[#555]">iOS app &middot; Dynamic Island &middot; design studio</p>
 				</div>
 				<div class="mono text-left text-xs text-[#666] md:text-right">
@@ -48,7 +48,7 @@
 				<div>
 					<div class="mono mb-3 text-xs tracking-widest text-[#666]">// TL;DR</div>
 					<p class="text-sm leading-6 text-[#a0a0a0]">Every HIGH is closed and verified. The expanded Island now actually receives its coaching sentence, its piece glyph and an evaluation signed for the player holding the phone. The two lock-screen labels that measured under 3:1 now clear 6:1.</p>
-					<p class="mt-4 text-sm leading-6 text-[#34d399]">One unlisted defect turned up while verifying: <span class="mono text-[#fafafa]">SelfTest</span> had been unreachable since commit 3555511, so <span class="mono text-[#fafafa]">-chesssense-selftest</span> was a silent no-op. Restored, and the report now records fresh runs rather than a stale file.</p>
+					<p class="mt-4 text-sm leading-6 text-[#34d399]">One unlisted defect turned up while verifying: <span class="mono text-[#fafafa]">SelfTest</span> had been unreachable since commit 3555511, so <span class="mono text-[#fafafa]">-snse-selftest</span> was a silent no-op. Restored, and the report now records fresh runs rather than a stale file.</p>
 				</div>
 			</div>
 		</section>
@@ -124,7 +124,7 @@
 							<td class="py-2 pl-2 text-right mono text-[#34d399]">6.06:1</td>
 						</tr>
 						<tr>
-							<td class="py-2 pr-3 text-[#a0a0a0]">chess-sense header (untouched)</td>
+							<td class="py-2 pr-3 text-[#a0a0a0]">snse header (untouched)</td>
 							<td class="py-2 text-right mono text-[#666]">4.77:1</td>
 							<td class="py-2 pl-2 text-right mono text-[#666]">5.26:1</td>
 						</tr>
@@ -247,7 +247,7 @@
 			<article class="border border-[#2a2416] bg-[#12100a] p-5">
 				<div class="mono mb-2 text-xs text-[#fbbf24]">DEAD CODE &middot; FIXED</div>
 				<h2 class="mb-2 text-lg font-semibold">SelfTest had been unreachable since commit 3555511</h2>
-				<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">Commit 3555511 deleted the <span class="mono">.task { guard SelfTest.requested … }</span> hook from <span class="mono">ContentView</span>, so <span class="mono">-chesssense-selftest</span> had been a silent no-op and the README's instructions did nothing. Restored at <span class="mono">ContentView.swift:58-68</span>. This also corrects the first report in this series, which quoted a stale report file left in the simulator container by an earlier run.</p>
+				<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">Commit 3555511 deleted the <span class="mono">.task { guard SelfTest.requested … }</span> hook from <span class="mono">ContentView</span>, so <span class="mono">-snse-selftest</span> had been a silent no-op and the README's instructions did nothing. Restored at <span class="mono">ContentView.swift:58-68</span>. This also corrects the first report in this series, which quoted a stale report file left in the simulator container by an earlier run.</p>
 				<div class="border-l border-[#fbbf24] pl-4 text-sm leading-6 text-[#fbbf24]">The runs now quoted are fresh, from a clean install, and the report timestamp moves with each launch.</div>
 			</article>
 		</section>
@@ -266,7 +266,7 @@
 				<article class="border border-[#12261f] bg-[#08120e] p-5">
 					<div class="mono mb-2 text-xs text-[#34d399]">HIGH &middot; WRITING &middot; FIXED</div>
 					<h2 class="mb-2 text-lg font-semibold">Internal terms could still reach the player</h2>
-					<p class="mb-3 mono text-xs text-[#666]">Sources/ChessSenseCore/Piece.swift</p>
+					<p class="mb-3 mono text-xs text-[#666]">Sources/SNSECore/Piece.swift</p>
 					<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">Added <span class="mono">userFacingDescription</span> beside the existing <span class="mono">description</span>. The old string stays for logs and <span class="mono">Diagnostics</span>; only the new one may appear on screen. Every surface was routed through it, including the App Intent, the app's error line, the "no move" line, and the Live Activity start failure.</p>
 					<div class="border-l border-[#34d399] pl-4 text-sm leading-6 text-[#34d399]">Pinned by <span class="mono">ErrorCopyTests</span>: every case must fit the 60-character Island slot, read as a whole sentence, and name no internal machinery.</div>
 				</article>

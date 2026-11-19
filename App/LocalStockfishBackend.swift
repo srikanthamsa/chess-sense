@@ -14,7 +14,7 @@ final class LocalStockfishBackend: EngineBackend, @unchecked Sendable {
     let name = "stockfish 11 · on device"
 
     private let depth: Int
-    private let queue = DispatchQueue(label: "chesssense.stockfish", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "snse.stockfish", qos: .userInitiated)
     private var started = false
     private let lock = NSLock()
 
