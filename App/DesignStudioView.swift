@@ -164,7 +164,7 @@ struct DesignStudioView: View {
                 Spacer(minLength: 4)
                 EvalPill(evalText: sample.state.youEval, trusted: sample.state.trusted)
             }
-            IslandExpandedBottom(state: sample.state)
+            IslandExpandedDetail(state: sample.state)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)

@@ -520,14 +520,15 @@ public struct IslandExpandedBottom: View {
 }
 
 
-// MARK: - Expanded card (single container, so the glow can wrap the whole thing)
+// MARK: - Expanded detail (glowing strip)
 
-/// The expanded Island as one card.
+/// The detail strip under the move, and the only part that glows.
 ///
-/// Apple's own expanded activities give each region its own slot, but the glow has to trace a
-/// single outline to read as Siri's treatment. So the card owns the layout and the widget puts
-/// it in the bottom region, which is the one full-width slot available.
-public struct IslandExpandedCard: View {
+/// Putting the whole expanded activity in one card left the top of the island empty and the
+/// glow traced a box around nothing. Apple's own layout keeps the identifier row across the
+/// top and the detail below, so this does the same and the glow traces the strip that actually
+/// carries content.
+public struct IslandExpandedDetail: View {
     let state: BestMoveAttributes.ContentState
     public init(state: BestMoveAttributes.ContentState) { self.state = state }
 
@@ -535,23 +536,55 @@ public struct IslandExpandedCard: View {
     private var accent: Color { IslandAccent.resolve(state) }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 10) {
-                IslandExpandedLeading(state: state)
-                IslandExpandedMove(state: state)
-                Spacer(minLength: 4)
-                EvalPill(evalText: state.youEval, trusted: state.trusted)
+        if text.isEmpty {
+            EmptyView()
+        } else {
+            HStack(alignment: .top, spacing: 9) {
+                Capsule()
+                    .fill(accent)
+                    .frame(width: 2.5, height: 13)
+                    .padding(.top, 3)
+
+                Text(text)
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.78))
+                    .lineSpacing(1.5)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .contentTransition(.opacity)
+                    .animation(.snappy(duration: 0.3), value: text)
+
+                Spacer(minLength: 0)
             }
-            IslandExpandedBottom(state: state)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(.white.opacity(0.045))
+            )
+            .intelligenceOverlay(
+                in: RoundedRectangle(cornerRadius: 18, style: .continuous),
+                lineWidths: presentation == .move ? [1.5, 3.5, 6] : [1, 2.5, 4.5],
+                blurs: [0, 2, 6],
+                updateInterval: presentation == .pending ? 0.3 : 0.65
+            )
+            .padding(.top, 2)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .intelligenceOverlay(
-            in: RoundedRectangle(cornerRadius: 26, style: .continuous),
-            lineWidths: presentation == .move ? [2, 4, 7] : [1.5, 3, 5],
-            blurs: [0, 2, 7],
-            updateInterval: presentation == .pending ? 0.35 : 0.6
-        )
+    }
+
+    private var text: String {
+        switch presentation {
+        case .rejected:
+            return state.why.isEmpty
+                ? "Couldn't read the board. Screenshot it again."
+                : state.why
+        case .pending:
+            return state.youEval.isEmpty
+                ? "Waiting for a screenshot"
+                : "Reading the board"
+        case .move:
+            return state.tip
+        }
     }
 }
 
@@ -622,9 +655,9 @@ public struct LockScreenCard: View {
         .padding(.vertical, 14)
         .intelligenceOverlay(
             in: RoundedRectangle(cornerRadius: 24, style: .continuous),
-            lineWidths: [1.5, 3, 6],
-            blurs: [0, 2, 8],
-            updateInterval: 0.7
+            lineWidths: [1, 2, 4],
+            blurs: [0, 1.5, 5],
+            updateInterval: 0.9
         )
         .accessibilityElement(children: .combine)
     }

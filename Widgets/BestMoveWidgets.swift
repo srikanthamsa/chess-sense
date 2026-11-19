@@ -11,9 +11,19 @@ struct BestMoveLiveActivity: Widget {
         } dynamicIsland: { context in
             let accent = IslandAccent.resolve(context.state)
             return DynamicIsland {
-                // One card in the bottom region: the glow needs a single outline to trace.
+                // Apple's own layout: identifier across the top, detail underneath. The glow
+                // lives on the detail strip so it traces something real.
+                DynamicIslandExpandedRegion(.leading) {
+                    IslandExpandedLeading(state: context.state)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    EvalPill(evalText: context.state.youEval, trusted: context.state.trusted)
+                }
+                DynamicIslandExpandedRegion(.center) {
+                    IslandExpandedMove(state: context.state)
+                }
                 DynamicIslandExpandedRegion(.bottom) {
-                    IslandExpandedCard(state: context.state)
+                    IslandExpandedDetail(state: context.state)
                 }
             } compactLeading: {
                 IslandCompactLeading(trusted: context.state.trusted, accent: accent)

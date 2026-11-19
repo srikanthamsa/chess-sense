@@ -42,6 +42,7 @@ struct ContentView: View {
     @State private var lastWhy: String?
 
     @State private var showSettings = false
+    @State private var notice: String?
 
     // MARK: Body
 
@@ -95,8 +96,8 @@ struct ContentView: View {
                 Text("SN").foregroundStyle(ink)
                 Text("SE").foregroundStyle(magenta)
             }
-            .font(.system(size: 76, weight: .black).width(.compressed))
-            .tracking(-2.5)
+            .font(.system(size: 92, weight: .black).width(.expanded))
+            .tracking(-4)
             .lineLimit(1)
             .minimumScaleFactor(0.5)
 
@@ -115,6 +116,15 @@ struct ContentView: View {
                     .foregroundStyle(mute)
             }
             .padding(.top, 6)
+
+            if let notice {
+                Text(notice.uppercased())
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .tracking(1.2)
+                    .foregroundStyle(mute)
+                    .padding(.top, 4)
+                    .transition(.opacity)
+            }
         }
         .padding(.top, 8)
     }
@@ -127,11 +137,11 @@ struct ContentView: View {
     // MARK: - Answer
 
     private var answerCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 10) {
                 Text(headline)
-                    .font(.system(size: 54, weight: .black).width(.compressed))
-                    .tracking(-1.2)
+                    .font(.system(size: 58, weight: .black).width(.compressed))
+                    .tracking(-1.5)
                     .lineLimit(1)
                     .minimumScaleFactor(0.35)
                     .foregroundStyle(lastMove == nil ? ink.opacity(0.9) : ink)
@@ -193,7 +203,7 @@ struct ContentView: View {
                 highlight: highlightSquares,
                 isPlaceholder: trackedFEN == nil
             )
-            .frame(width: boardSide, height: boardSide)
+            .frame(width: boardSide, height: boardSide + 26)
         }
         .padding(.top, 26)
     }
@@ -321,18 +331,15 @@ struct ContentView: View {
         if on {
             do {
                 _ = try LiveActivityController.start()
-                headline = "ISLAND ON"
-                subline = "Screenshot a move; the answer appears above the game."
+                notice = "Live Activity started"
                 tracking = true
             } catch {
                 tracking = false
-                headline = "ISLAND OFF"
-                subline = "Live Activities are not available right now."
+                notice = "Live Activities are not available right now"
             }
         } else {
             await LiveActivityController.end()
-            headline = "ISLAND OFF"
-            subline = "Stopped."
+            notice = "Live Activity stopped"
             tracking = false
         }
     }
@@ -383,6 +390,7 @@ struct ContentView: View {
     }
 
     private func present(_ outcome: AnalysisPipeline.Outcome) {
+        notice = nil
         lastMove = outcome.move?.displayMove
         lastMoveUCI = outcome.move?.uci
         lastEval = outcome.move.map { outcome.playerEval.isEmpty ? $0.evalText : outcome.playerEval }
