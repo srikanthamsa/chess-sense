@@ -40,6 +40,8 @@ struct ContentView: View {
     @State private var lastMoveUCI: String?
     @State private var lastEval: String?
     @State private var lastWhy: String?
+    /// The last attempt could not be reconciled with the stored book: offer the fix inline.
+    @State private var needsCalibration = false
 
     @State private var showSettings = false
     @StateObject private var session = BoardSession()
@@ -306,6 +308,23 @@ struct ContentView: View {
                 }
                 .buttonStyle(.plain)
 
+                if needsCalibration {
+                    PhotosPicker(selection: $calibrationItem, matching: .images) {
+                        HStack(spacing: 7) {
+                            Image(systemName: "square.grid.3x3")
+                                .font(.system(size: 12, weight: .semibold))
+                            Text("CALIBRATE")
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .tracking(1.2)
+                        }
+                        .foregroundStyle(canvas)
+                        .frame(width: 150)
+                        .padding(.vertical, 15)
+                        .background(Capsule().fill(accent))
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 Button {
                     Task { await setTracking(!tracking) }
                 } label: {
@@ -450,6 +469,12 @@ struct ContentView: View {
             headline = "COULDN'T READ"
             subline = Self.recovery(for: error)
             detail = "\(error)"
+            switch error as? BoardError {
+            case .differentBoard?, .notCalibrated?, .verificationFailed?:
+                needsCalibration = true
+            default:
+                needsCalibration = false
+            }
         }
     }
 
@@ -467,6 +492,7 @@ struct ContentView: View {
             lastWhy = outcome.why.isEmpty ? nil : outcome.why
         }
 
+        needsCalibration = false
         if let move = outcome.move {
             headline = move.displayMove
             subline = outcome.trackingNote.isEmpty ? "Best move in this position."
@@ -490,7 +516,9 @@ struct ContentView: View {
         case BoardError.boardNotFound:
             return "No board in that image. Frame the whole board."
         case BoardError.verificationFailed:
-            return "That is not a starting position. Use a fresh game."
+            return "Learn this board: screenshot its starting position once."
+        case BoardError.differentBoard:
+            return "Learn this board: screenshot its starting position once."
         case let BoardError.unknownSquare(rank, file, _):
             return "Square \(file + 1)/\(8 - rank) was unreadable. Try another frame."
         default:
