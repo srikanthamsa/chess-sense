@@ -103,9 +103,10 @@ public struct IslandPiece: View {
                     .interpolation(.high)
                     .scaledToFit()
             } else {
+                // Drawn on the light square, so the fallback must be dark or it vanishes.
                 Image(systemName: "knight")
                     .font(.system(size: size * 0.6, weight: .bold))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(Theme.canvas)
             }
         }
         .frame(width: size, height: size)
@@ -176,9 +177,11 @@ public struct EvalPill: View {
     private var tint: Color { trusted ? advantageTint(evalText) : Theme.mute }
 
     public var body: some View {
-        HStack(spacing: 4) {
-            LevelMeter(value: advantageFraction(evalText), tint: tint)
-            SteadyText(display, size: 12, weight: .semibold, tint: tint)
+        HStack(spacing: 3) {
+            Image(systemName: evalText.hasPrefix("-") ? "arrow.down.right" : "arrow.up.right")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(tint)
+            SteadyText(display, size: 13, weight: .semibold, tint: tint)
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 4)
@@ -250,9 +253,13 @@ public struct IslandCompactLeading: View {
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(Theme.gold)
             } else {
-                // Always the knight mark while waiting: a chess app should never show a
-                // download ring, and this is the one glyph that says what the app is.
-                IslandPiece(symbol: symbol.isEmpty ? "N" : symbol, size: 19)
+                // On the light square, exactly like the expanded badge: a black rook drawn
+                // straight on the island's black surface is invisible, which is what left the
+                // compact activity looking empty on the left.
+                RoundedRectangle(cornerRadius: 4.5, style: .continuous)
+                    .fill(Theme.squareLight)
+                    .frame(width: 20, height: 20)
+                    .overlay(IslandPiece(symbol: symbol.isEmpty ? "N" : symbol, size: 16))
             }
         }
     }
@@ -358,11 +365,9 @@ public struct IslandExpandedMove: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             if presentation == .move {
+                // One line only: the evaluation already appears in the trailing pill, and a
+                // second line here was what pushed the card into the island's border.
                 SteadyText(state.displayMove, size: 24, weight: .semibold, tint: Theme.ink)
-                Text(state.youEval.isEmpty ? "best move" : "you are " + state.youEval)
-                    .font(.system(size: 9, weight: .medium, design: .monospaced))
-                    .tracking(0.8)
-                    .foregroundStyle(Theme.mute)
             } else if presentation == .pending {
                 Text("Waiting for a screenshot")
                     .font(.system(size: 12, weight: .medium))
@@ -423,43 +428,11 @@ public struct IslandExpandedDetail: View {
             }
             .fixedSize(horizontal: false, vertical: true)
 
-            SegmentMeter(stage: stage, count: 4, tint: Theme.good)
-                .frame(height: 3)
         }
+        .padding(.bottom, 1)
     }
 }
 
-/// Four thin segments, the current one lit. No spinner anywhere.
-public struct SegmentMeter: View {
-    let stage: Int
-    let count: Int
-    let tint: Color
-
-    public init(stage: Int, count: Int = 4, tint: Color) {
-        self.stage = stage
-        self.count = count
-        self.tint = tint
-    }
-
-    public var body: some View {
-        HStack(spacing: 4) {
-            ForEach(0..<count, id: \.self) { index in
-                Capsule()
-                    .fill(index == stage ? tint : Theme.line)
-                    .frame(height: index == stage ? 3 : 2)
-                    .frame(maxWidth: .infinity)
-            }
-        }
-        .animation(.spring(response: 0.35, dampingFraction: 0.72), value: stage)
-    }
-}
-
-/// Kept for the studio and older call sites.
-public struct IslandExpandedBottom: View {
-    let state: BestMoveAttributes.ContentState
-    public init(state: BestMoveAttributes.ContentState) { self.state = state }
-    public var body: some View { IslandExpandedDetail(state: state) }
-}
 
 /// The expanded card as one piece, for the in-app studio.
 public struct IslandExpandedCard: View {

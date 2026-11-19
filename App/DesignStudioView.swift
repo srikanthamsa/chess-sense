@@ -112,7 +112,8 @@ struct DesignStudioView: View {
                 IslandCompactLeading(move: sample.state.displayMove,
                                      trusted: sample.state.trusted,
                                      accent: IslandAccent.resolve(sample.state),
-                                     presentation: IslandPresentation(sample.state))
+                                     presentation: IslandPresentation(sample.state),
+                                     symbol: sample.state.pieceSymbol)
                 IslandCompactTrailing(move: sample.state.displayMove,
                                       trusted: sample.state.trusted,
                                       accent: IslandAccent.resolve(sample.state),
