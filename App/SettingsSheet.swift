@@ -20,7 +20,7 @@ struct SettingsSheet: View {
     private let hairline = Color(red: 0.10, green: 0.10, blue: 0.11)
     private let ink = Color(red: 0.957, green: 0.957, blue: 0.949)
     private let mute = Color(red: 0.467, green: 0.455, blue: 0.467)
-    private let magenta = Color(red: 0.886, green: 0.102, blue: 0.635)
+    private let gold = Color(red: 0.831, green: 0.659, blue: 0.353)
 
     private var notes: [(String, String)] {
         [
@@ -182,7 +182,7 @@ struct SettingsSheet: View {
     ) -> some View {
         HStack(alignment: .center) {
             Circle()
-                .fill(live ? magenta : hairline)
+                .fill(live ? gold : hairline)
                 .frame(width: 5, height: 5)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(ink)

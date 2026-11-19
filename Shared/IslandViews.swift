@@ -83,27 +83,43 @@ public struct CheckerMark: View {
 }
 
 /// A piece, drawn from the same asset set the reader matches against.
-public struct PieceBadge: View {
-    let symbol: String
-    let accent: Color
-    var diameter: CGFloat = 30
 
-    public init(symbol: String, accent: Color, diameter: CGFloat = 30) {
+/// The piece art on its own — no tile, no background. Used inside the island, where a filled
+/// square behind a transparent glyph reads as a coloured block.
+public struct IslandPiece: View {
+    let symbol: String
+    var size: CGFloat = 20
+
+    public init(symbol: String, size: CGFloat = 20) {
         self.symbol = symbol
-        self.accent = accent
-        self.diameter = diameter
+        self.size = size
     }
 
-    /// `pieceSymbol` is a Unicode chess glyph (♘), not an asset name. Map both forms so the
-    /// badge survives either convention.
-    private var asset: String? {
+    public var body: some View {
+        Group {
+            if let asset = PieceAsset.name(for: symbol) {
+                Image(asset)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+            } else {
+                Image(systemName: "knight")
+                    .font(.system(size: size * 0.6, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+            }
+        }
+        .frame(width: size, height: size)
+    }
+}
+
+/// Maps either convention — an asset name ("bQ") or a Unicode glyph ("♛") — to a bundled piece.
+enum PieceAsset {
+    static func name(for symbol: String) -> String? {
         if symbol.count >= 2, symbol.first == "w" || symbol.first == "b" {
             let kind = symbol.dropFirst().uppercased()
             return ["K", "Q", "R", "B", "N", "P"].contains(kind) ? String(symbol.prefix(1)) + kind : nil
         }
-        guard symbol.unicodeScalars.count == 1, let scalar = symbol.unicodeScalars.first else {
-            return nil
-        }
+        guard symbol.unicodeScalars.count == 1, let scalar = symbol.unicodeScalars.first else { return nil }
         switch scalar.value {
         case 0x2654: return "wK"
         case 0x2655: return "wQ"
@@ -120,24 +136,26 @@ public struct PieceBadge: View {
         default: return nil
         }
     }
+}
 
+public struct PieceBadge: View {
+    let symbol: String
+    let accent: Color
+    var diameter: CGFloat = 30
+
+    public init(symbol: String, accent: Color, diameter: CGFloat = 30) {
+        self.symbol = symbol
+        self.accent = accent
+        self.diameter = diameter
+    }
+
+    /// No tile behind the art. The pieces are transparent graphics; a filled square behind
+    /// them reads as a coloured block, which is what the island was showing.
     public var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: diameter * 0.26, style: .continuous)
-                .fill(Theme.squareDark.opacity(0.9))
-            if let asset {
-                Image(asset)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-                    .padding(diameter * 0.14)
-            }
-        }
-        .frame(width: diameter, height: diameter)
+        IslandPiece(symbol: symbol, size: diameter)
     }
 }
 
-/// The evaluation, as a number you can read across a room.
 public struct EvalPill: View {
     let evalText: String
     let trusted: Bool
@@ -206,12 +224,15 @@ public struct IslandCompactLeading: View {
     let trusted: Bool
     let accent: Color
     let presentation: IslandPresentation
+    var symbol: String = ""
 
-    public init(move: String, trusted: Bool, accent: Color, presentation: IslandPresentation) {
+    public init(move: String, trusted: Bool, accent: Color,
+                presentation: IslandPresentation, symbol: String = "") {
         self.move = move
         self.trusted = trusted
         self.accent = accent
         self.presentation = presentation
+        self.symbol = symbol
     }
 
     public var body: some View {
@@ -219,15 +240,14 @@ public struct IslandCompactLeading: View {
             if presentation == .pending {
                 ProgressRing(value: 0.62, lineWidth: 2, tint: Theme.gold, track: Theme.line)
                     .frame(width: 16, height: 16)
+            } else if presentation == .rejected {
+                Image(systemName: "exclamationmark")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Theme.gold)
             } else {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(Theme.squareDark)
-                    .frame(width: 20, height: 20)
-                    .overlay(
-                        Image(systemName: presentation == .rejected ? "exclamationmark" : "knight")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(Theme.ink)
-                    )
+                // The piece on its own: no tile behind it. The art is transparent, so a
+                // background here reads as a coloured square inside the island.
+                IslandPiece(symbol: symbol.isEmpty ? "N" : symbol, size: 19)
             }
         }
     }
@@ -376,7 +396,7 @@ public struct IslandExpandedDetail: View {
                         .lineSpacing(1.5)
                         .foregroundStyle(Theme.ink.opacity(0.82))
                         .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .truncationMode(.tail)
                     Spacer(minLength: 0)
                 }
                 AdvantageBar(evalText: state.youEval, height: 3, tint: advantageTint(state.youEval))
@@ -475,10 +495,6 @@ public struct LockScreenCard: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .strokeBorder(Theme.line, lineWidth: 1)
-        )
         .accessibilityElement(children: .combine)
     }
 }

@@ -42,6 +42,7 @@ struct ContentView: View {
     @State private var lastWhy: String?
 
     @State private var showSettings = false
+    @StateObject private var session = BoardSession()
     @State private var notice: String?
 
     // MARK: Body
@@ -55,7 +56,7 @@ struct ContentView: View {
                     brand
                     answerCard
                     boardSection
-                    if !detail.isEmpty { detailLine }
+                    Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 130)
@@ -166,13 +167,13 @@ struct ContentView: View {
                 .foregroundStyle(ink.opacity(lastWhy == nil ? 0.55 : 0.8))
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(18)
+        .padding(14)
         .background(panel, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .strokeBorder(hairline, lineWidth: 1)
         )
-        .padding(.top, 22)
+        .padding(.top, 16)
     }
 
     // MARK: - Board
@@ -198,16 +199,81 @@ struct ContentView: View {
             LiveBoard(
                 fen: trackedFEN ?? startFEN,
                 highlight: highlightSquares,
-                isPlaceholder: trackedFEN == nil
+                isPlaceholder: trackedFEN == nil,
+                session: session
             )
-            .frame(width: boardSide, height: boardSide + 26)
+            .frame(width: boardSide, height: boardSide)
         }
-        .padding(.top, 26)
+        .padding(.top, 18)
     }
 
     private var boardSide: CGFloat {
         // The board *plus* the footer line, so the square stays square.
-        UIScreen.main.bounds.width - 40
+        UIScreen.main.bounds.width - 64
+    }
+
+    /// Undo, redo, reset and the current selection, beside the board rather than under it.
+    private var boardControls: some View {
+        HStack(spacing: 8) {
+            Button { withAnimation(.snappy(duration: 0.24)) { session.undo() } } label: {
+                controlChip("UNDO", enabled: session.canUndo)
+            }
+            .buttonStyle(.plain)
+            .disabled(!session.canUndo)
+
+            Button { withAnimation(.snappy(duration: 0.24)) { session.redo() } } label: {
+                controlChip("REDO", enabled: session.canRedo)
+            }
+            .buttonStyle(.plain)
+            .disabled(!session.canRedo)
+
+            Button { withAnimation(.snappy(duration: 0.3)) { session.reset() } } label: {
+                controlChip("RESET", enabled: session.isModified)
+            }
+            .buttonStyle(.plain)
+            .disabled(!session.isModified)
+
+            Button { withAnimation(.snappy(duration: 0.3)) { session.flipped.toggle() } } label: {
+                controlChip(session.flipped ? "BLACK" : "WHITE", enabled: true)
+            }
+            .buttonStyle(.plain)
+
+            Spacer(minLength: 6)
+
+            Text(boardStatus)
+                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                .tracking(1.1)
+                .foregroundStyle(session.rejected
+                                 ? Color(red: 0.76, green: 0.41, blue: 0.36)
+                                 : (session.selected == nil
+                                    ? Color(red: 0.44, green: 0.42, blue: 0.39)
+                                    : Color(red: 0.831, green: 0.659, blue: 0.353)))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+    }
+
+    private var boardStatus: String {
+        if session.rejected { return "NOT LEGAL" }
+        if let selected = session.selected {
+            let rank = selected / 8, file = selected % 8
+            let letter = Character(UnicodeScalar(UInt8(97 + file)))
+            return "SELECTED \\(letter)\\(8 - rank)".uppercased()
+        }
+        return trackedFEN == nil ? "WAITING FOR A FRAME" : "TAP A PIECE, THEN ITS DESTINATION"
+    }
+
+    private func controlChip(_ text: String, enabled: Bool) -> some View {
+        Text(text)
+            .font(.system(size: 9, weight: .semibold, design: .monospaced))
+            .tracking(1.2)
+            .foregroundStyle(enabled ? Color(red: 0.83, green: 0.80, blue: 0.74)
+                                     : Color(red: 0.32, green: 0.31, blue: 0.29))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .overlay(Capsule().strokeBorder(Color(red: 0.16, green: 0.15, blue: 0.14), lineWidth: 1))
     }
 
     private var detailLine: some View {
@@ -223,6 +289,7 @@ struct ContentView: View {
     private var actionBar: some View {
         VStack(spacing: 0) {
             Rectangle().fill(hairline).frame(height: 1)
+            boardControls
             HStack(spacing: 10) {
                 PhotosPicker(selection: $analysisItem, matching: .images) {
                     HStack(spacing: 8) {
@@ -258,7 +325,7 @@ struct ContentView: View {
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, 20)
-            .padding(.top, 12)
+            .padding(.top, 4)
             .padding(.bottom, 8)
             .background(.ultraThinMaterial)
         }
