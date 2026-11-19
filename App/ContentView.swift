@@ -14,12 +14,12 @@ struct ContentView: View {
 
     // MARK: Palette
 
-    private let canvas = Color(red: 0.02, green: 0.02, blue: 0.02)
-    private let panel = Color(red: 0.035, green: 0.035, blue: 0.04)
-    private let hairline = Color(red: 0.10, green: 0.10, blue: 0.11)
-    private let ink = Color(red: 0.957, green: 0.957, blue: 0.949)
-    private let mute = Color(red: 0.467, green: 0.455, blue: 0.467)
-    private let magenta = Color(red: 0.886, green: 0.102, blue: 0.635)
+    private let canvas = Theme.canvas
+    private let panel = Theme.panel
+    private let hairline = Theme.line
+    private let ink = Theme.ink
+    private let mute = Theme.mute
+    private let accent = Theme.gold
 
     private let startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
@@ -94,7 +94,7 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline, spacing: 0) {
                 Text("SN").foregroundStyle(ink)
-                Text("SE").foregroundStyle(magenta)
+                Text("SE").foregroundStyle(accent)
             }
             .font(.system(size: 92, weight: .black).width(.expanded))
             .tracking(-4)
@@ -103,12 +103,12 @@ struct ContentView: View {
 
             HStack(spacing: 8) {
                 Circle()
-                    .fill(tracking ? magenta : mute)
+                    .fill(tracking ? accent : mute)
                     .frame(width: 5, height: 5)
                 Text(statusLabel)
                     .font(.system(size: 9, weight: .semibold, design: .monospaced))
                     .tracking(1.5)
-                    .foregroundStyle(tracking ? magenta : mute)
+                    .foregroundStyle(tracking ? accent : mute)
                 Spacer()
                 Text("STOCKFISH 11 · d12")
                     .font(.system(size: 9, weight: .medium, design: .monospaced))
@@ -151,8 +151,7 @@ struct ContentView: View {
                 if let eval = lastEval, lastMove != nil {
                     Text(eval)
                         .font(.system(size: 13, weight: .bold, design: .monospaced))
-                        .foregroundStyle(eval.hasPrefix("-") ? Color(red: 0.97, green: 0.44, blue: 0.44)
-                                                             : Color(red: 0.36, green: 0.85, blue: 0.58))
+                        .foregroundStyle(eval.hasPrefix("-") ? Theme.bad : Theme.good)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(Capsule().fill(.white.opacity(0.06)))
@@ -169,11 +168,9 @@ struct ContentView: View {
         }
         .padding(18)
         .background(panel, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .intelligenceOverlay(
-            in: RoundedRectangle(cornerRadius: 22, style: .continuous),
-            lineWidths: lastMove == nil ? [1.5, 3, 5] : [1.5, 4, 7],
-            blurs: [0, 2, 7],
-            updateInterval: 0.6
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(hairline, lineWidth: 1)
         )
         .padding(.top, 22)
     }
@@ -247,7 +244,7 @@ struct ContentView: View {
                 } label: {
                     HStack(spacing: 7) {
                         Circle()
-                            .fill(tracking ? magenta : ink.opacity(0.5))
+                            .fill(tracking ? accent : ink.opacity(0.5))
                             .frame(width: 6, height: 6)
                         Text(tracking ? "LIVE" : "GO LIVE")
                             .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -267,7 +264,7 @@ struct ContentView: View {
         }
         .overlay(alignment: .top) {
             if busy {
-                Rectangle().fill(magenta).frame(height: 2)
+                Rectangle().fill(accent).frame(height: 2)
             }
         }
         .animation(.easeOut(duration: 0.2), value: busy)

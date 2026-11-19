@@ -98,7 +98,7 @@ struct LiveBoard: View {
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(.white.opacity(0.07), lineWidth: 0.5)
+                        .strokeBorder(Theme.line, lineWidth: 0.5)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -133,7 +133,7 @@ struct LiveBoard: View {
                 .font(.system(size: 9, weight: .medium, design: .monospaced))
                 .tracking(1.2)
                 .foregroundStyle(selected == nil ? Color.white.opacity(0.38)
-                                                 : Color(red: 0.886, green: 0.102, blue: 0.635))
+                                                 : Theme.gold)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             Spacer(minLength: 8)
@@ -144,7 +144,7 @@ struct LiveBoard: View {
                     Text("UNDO")
                         .font(.system(size: 9, weight: .bold, design: .monospaced))
                         .tracking(1.3)
-                        .foregroundStyle(Color(red: 0.886, green: 0.102, blue: 0.635))
+                        .foregroundStyle(Theme.gold)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                 }
@@ -159,7 +159,7 @@ struct LiveBoard: View {
                     .foregroundStyle(.white.opacity(0.55))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 1))
+                    .overlay(Capsule().strokeBorder(Theme.line, lineWidth: 1))
             }
             .buttonStyle(.plain)
         }
@@ -231,14 +231,12 @@ struct LiveBoard: View {
         let isSelected = selected == index
         ZStack {
             Rectangle()
-                .fill(cell?.light == true
-                      ? Color(red: 0.80, green: 0.78, blue: 0.87)
-                      : Color(red: 0.45, green: 0.40, blue: 0.60))
+                .fill(cell?.light == true ? Theme.squareLight : Theme.squareDark)
             if marked {
-                Rectangle().fill(Color(red: 0.886, green: 0.102, blue: 0.635).opacity(0.30))
+                Rectangle().fill(Theme.gold.opacity(0.45))
             }
             if isSelected {
-                Rectangle().strokeBorder(Color(red: 0.886, green: 0.102, blue: 0.635), lineWidth: 2)
+                Rectangle().strokeBorder(Theme.gold, lineWidth: 2.5)
             }
             if let cell, !cell.asset.isEmpty, dragFrom != index {
                 Image(cell.asset)
