@@ -1,31 +1,17 @@
 import SwiftUI
 
-/// Visual language for the Live Activity, shared by the widget extension and the in-app
-/// design studio so what you preview is literally what the Island renders.
-///
-/// This is a chess set, not a dashboard: charcoal, cream, one gold. The island borrows the
-/// presentation model the web's best island component (islandcn) converged on — a compact
-/// face, a split face, and an expanded card — but the parts are chess parts: a piece on a
-/// walnut square, the move, the evaluation ring, and one line of reasoning.
+/// The Island uses a dark glass tile, white type, and semantic colour only.
+/// Green and red show the position's value, and gold marks a check or a mate.
+/// There is no decorative colour, no gradient, and no loader.
 public enum Island {
     public static let moveSize: CGFloat = 30
-    public static let whySize: CGFloat = 11.5
-    public static let barHeight: CGFloat = 4
-
-    public static let jade = Theme.good
-    public static let crimson = Theme.bad
-    public static let amber = Theme.gold
-    public static let gold = Theme.gold
-    public static let violet = Theme.ink
-    public static let sky = Theme.ink
-    public static let lavender = Theme.mute
-    public static let neutral = Theme.mute
+    public static let whySize: CGFloat = 12.5
+    public static let tileFill = Color.white.opacity(0.055)
+    public static let tileStroke = Color.white.opacity(0.10)
 }
 
 // MARK: - State
 
-/// Three distinguishable situations. Collapsing "waiting" and "could not read" into one
-/// empty state made the rejected face render as a skeleton forever.
 public enum IslandPresentation {
     case move, pending, rejected
 
@@ -36,25 +22,20 @@ public enum IslandPresentation {
     }
 }
 
-/// One accent per state, and every accent has a reason: a finishing blow, a promotion, a
-/// capture, castling, a check, then how the position stands.
+/// Each state has one accent. Green and red show the position's value, and gold marks a check
+/// or a mate. A neutral position uses the muted text colour.
 public enum IslandAccent {
     public static func resolve(_ state: BestMoveAttributes.ContentState) -> Color {
-        if !state.trusted { return Theme.gold }
+        if !state.trusted { return Theme.bad }
         let san = state.san
-        if san.contains("#") { return Theme.gold }
-        if san.contains("=") { return Theme.ink }
-        if san.contains("x") { return Theme.gold }
-        if san.contains("O-O") { return Theme.gold }
-        if san.contains("+") { return Theme.gold }
+        if san.contains("#") || san.contains("+") { return Theme.gold }
         let f = advantageFraction(state.youEval)
         if f > 0.58 { return Theme.good }
         if f < 0.42 { return Theme.bad }
-        return Theme.gold
+        return Theme.mute
     }
 }
 
-/// Signed value in pawns, squashed so everyday edges stay near the centre.
 public func advantageFraction(_ text: String) -> Double {
     if text.hasPrefix("#") { return 1 }
     if text.hasPrefix("-#") { return 0 }
@@ -66,54 +47,50 @@ public func advantageTint(_ text: String) -> Color {
     let f = advantageFraction(text)
     if f > 0.56 { return Theme.good }
     if f < 0.44 { return Theme.bad }
-    return Theme.mute
+    return Color.white.opacity(0.7)
 }
 
-// MARK: - Small parts
+private func hasEval(_ text: String) -> Bool { !text.isEmpty }
 
-/// The board square a piece sits on: the island's one literal reference to a chess set.
-public struct CheckerMark: View {
-    let light: Bool
-    public init(light: Bool) { self.light = light }
+// MARK: - Piece art
 
-    public var body: some View {
-        RoundedRectangle(cornerRadius: 3, style: .continuous)
-            .fill(light ? Theme.squareLight : Theme.squareDark)
-    }
-}
-
-/// A piece, drawn from the same asset set the reader matches against.
-
-/// The piece art on its own — no tile, no background. Used inside the island, where a filled
-/// square behind a transparent glyph reads as a coloured block.
+/// The bundled art is black line work on transparency. White pieces are outlines and black
+/// pieces are solid silhouettes. Template tinting keeps both visible on black, and the
+/// outline still shows which side the piece belongs to.
 public struct IslandPiece: View {
     let symbol: String
     var size: CGFloat = 20
+    var tint: Color = .white
 
-    public init(symbol: String, size: CGFloat = 20) {
+    public init(symbol: String, size: CGFloat = 20, tint: Color = .white) {
         self.symbol = symbol
         self.size = size
+        self.tint = tint
     }
 
     public var body: some View {
         Group {
             if let asset = PieceAsset.name(for: symbol) {
                 Image(asset)
+                    .renderingMode(.template)
                     .resizable()
                     .interpolation(.high)
                     .scaledToFit()
+                    .foregroundStyle(tint)
+            } else if symbol.isEmpty {
+                Circle()
+                    .fill(tint.opacity(0.45))
+                    .padding(size * 0.4)
             } else {
-                // Drawn on the light square, so the fallback must be dark or it vanishes.
                 Image(systemName: "knight")
-                    .font(.system(size: size * 0.6, weight: .bold))
-                    .foregroundStyle(Theme.canvas)
+                    .font(.system(size: size * 0.66, weight: .semibold))
+                    .foregroundStyle(tint)
             }
         }
         .frame(width: size, height: size)
     }
 }
 
-/// Maps either convention — an asset name ("bQ") or a Unicode glyph ("♛") — to a bundled piece.
 enum PieceAsset {
     static func name(for symbol: String) -> String? {
         if symbol.count >= 2, symbol.first == "w" || symbol.first == "b" {
@@ -139,32 +116,69 @@ enum PieceAsset {
     }
 }
 
-public struct PieceBadge: View {
+/// A rounded dark-glass square holds the piece. While the board is being read it holds the
+/// app's muted knight, so the wait shows a chess mark, not a loading control.
+public struct PieceTile: View {
     let symbol: String
-    let accent: Color
-    var diameter: CGFloat = 30
+    let presentation: IslandPresentation
+    var size: CGFloat = 34
+    var showsTile: Bool = true
 
-    public init(symbol: String, accent: Color, diameter: CGFloat = 30) {
+    public init(symbol: String, presentation: IslandPresentation,
+                size: CGFloat = 34, showsTile: Bool = true) {
         self.symbol = symbol
-        self.accent = accent
-        self.diameter = diameter
+        self.presentation = presentation
+        self.size = size
+        self.showsTile = showsTile
     }
 
-    /// The piece sits on a cream square, like it would on a board.
-    ///
-    /// The art is black-and-white line art with transparent backgrounds, so a black rook on the
-    /// island's black surface disappears entirely. The square is the light board square, which
-    /// gives every piece something to sit on and reads as chess rather than as a coloured tile.
+    private var cornerRadius: CGFloat {
+        if size >= 30 { return 10 }
+        if size >= 20 { return 8 }
+        return 6
+    }
+
     public var body: some View {
-        RoundedRectangle(cornerRadius: diameter * 0.22, style: .continuous)
-            .fill(Theme.squareLight)
-            .frame(width: diameter, height: diameter)
-            .overlay(
-                IslandPiece(symbol: symbol, size: diameter * 0.78)
-            )
+        ZStack {
+            if showsTile {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Island.tileFill)
+                    .frame(width: size, height: size)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(presentation == .rejected
+                                  ? Theme.bad.opacity(0.35)
+                                  : Island.tileStroke,
+                                  lineWidth: 1)
+                    .frame(width: size, height: size)
+            }
+            content
+        }
+        .frame(width: size, height: size)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch presentation {
+        case .move:
+            IslandPiece(symbol: symbol,
+                        size: size * (showsTile ? 0.62 : 0.86),
+                        tint: .white)
+        case .pending:
+            IslandPiece(symbol: "bN",
+                        size: size * (showsTile ? 0.62 : 0.86),
+                        tint: Theme.mute)
+        case .rejected:
+            Image(systemName: "xmark")
+                .font(.system(size: size * 0.34, weight: .semibold))
+                .foregroundStyle(Theme.bad)
+        }
     }
 }
 
+// MARK: - Evaluation
+
+/// A dark chip holds the evaluation. It has a hairline in the position's colour and a tabular
+/// number.
 public struct EvalPill: View {
     let evalText: String
     let trusted: Bool
@@ -174,57 +188,71 @@ public struct EvalPill: View {
         self.trusted = trusted
     }
 
-    private var tint: Color { trusted ? advantageTint(evalText) : Theme.mute }
+    private var isMate: Bool {
+        evalText.hasPrefix("#") || evalText.hasPrefix("-#")
+    }
 
-    public var body: some View {
-        HStack(spacing: 3) {
-            Image(systemName: evalText.hasPrefix("-") ? "arrow.down.right" : "arrow.up.right")
-                .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(tint)
-            SteadyText(display, size: 13, weight: .semibold, tint: tint)
-        }
-        .padding(.horizontal, 7)
-        .padding(.vertical, 4)
-        .background(
-            Capsule().fill(Theme.panel)
-        )
-        .overlay(
-            Capsule().strokeBorder(tint.opacity(0.25), lineWidth: 0.5)
-        )
+    private var tint: Color {
+        guard trusted else { return Color.white.opacity(0.55) }
+        return isMate ? Theme.gold : advantageTint(evalText)
+    }
+
+    private var caret: String {
+        let f = advantageFraction(evalText)
+        if f > 0.54 { return "chevron.up" }
+        if f < 0.46 { return "chevron.down" }
+        return "equal"
     }
 
     private var display: String {
         guard trusted else { return "—" }
-        if evalText.hasPrefix("#") || evalText.hasPrefix("-#") { return evalText }
+        if isMate { return evalText }
         return evalText.hasPrefix("-") ? evalText : "+" + evalText.replacingOccurrences(of: "+", with: "")
     }
-}
 
-/// Diverging bar: the centre is level, the fill is who is better.
-public struct AdvantageBar: View {
-    let evalText: String
-    var height: CGFloat = Island.barHeight
-    var tint: Color = Theme.mute
-
-    public init(evalText: String, height: CGFloat = Island.barHeight, tint: Color = Theme.mute) {
-        self.evalText = evalText
-        self.height = height
-        self.tint = tint
+    private var spoken: String {
+        guard trusted else { return "No reliable evaluation" }
+        if isMate { return "Forced mate, \(display)" }
+        let f = advantageFraction(evalText)
+        if f > 0.54 { return "You are better, \(display)" }
+        if f < 0.46 { return "You are worse, \(display)" }
+        return "Position is level, \(display)"
     }
 
     public var body: some View {
-        GeometryReader { geo in
-            let f = advantageFraction(evalText)
-            ZStack(alignment: .leading) {
-                Capsule().fill(Theme.line)
-                Capsule()
-                    .fill(tint)
-                    .frame(width: max(2, geo.size.width * abs(f - 0.5) * 2))
-                    .offset(x: f >= 0.5 ? geo.size.width / 2 : geo.size.width / 2 - geo.size.width * (0.5 - f) * 2)
+        Group {
+            if trusted && !hasEval(evalText) {
+                EmptyView()
+            } else if !trusted {
+                Text("—")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(tint)
+                    .accessibilityLabel("No reliable evaluation")
+            } else {
+                HStack(spacing: 4) {
+                    Image(systemName: caret)
+                        .font(.system(size: 9, weight: .semibold))
+                        .accessibilityHidden(true)
+                    Text(display)
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                }
+                .foregroundStyle(tint)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.white.opacity(0.06))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(tint.opacity(0.28), lineWidth: 1)
+                )
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(spoken)
             }
         }
-        .frame(height: height)
-        .animation(Spring.snappy, value: evalText)
     }
 }
 
@@ -247,21 +275,9 @@ public struct IslandCompactLeading: View {
     }
 
     public var body: some View {
-        ZStack {
-            if presentation == .rejected {
-                Image(systemName: "exclamationmark")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Theme.gold)
-            } else {
-                // On the light square, exactly like the expanded badge: a black rook drawn
-                // straight on the island's black surface is invisible, which is what left the
-                // compact activity looking empty on the left.
-                RoundedRectangle(cornerRadius: 4.5, style: .continuous)
-                    .fill(Theme.squareLight)
-                    .frame(width: 20, height: 20)
-                    .overlay(IslandPiece(symbol: symbol.isEmpty ? "N" : symbol, size: 16))
-            }
-        }
+        PieceTile(symbol: symbol, presentation: presentation,
+                  size: 20, showsTile: false)
+            .accessibilityHidden(true)
     }
 }
 
@@ -270,20 +286,50 @@ public struct IslandCompactTrailing: View {
     let trusted: Bool
     let accent: Color
     let evalText: String
+    let presentation: IslandPresentation
 
-    public init(move: String, trusted: Bool, accent: Color, evalText: String) {
+    public init(move: String, trusted: Bool, accent: Color,
+                evalText: String, presentation: IslandPresentation) {
         self.move = move
         self.trusted = trusted
         self.accent = accent
         self.evalText = evalText
+        self.presentation = presentation
+    }
+
+    private var caret: String {
+        let f = advantageFraction(evalText)
+        if f > 0.54 { return "chevron.up" }
+        if f < 0.46 { return "chevron.down" }
+        return "equal"
     }
 
     public var body: some View {
-        HStack(spacing: 5) {
-            SteadyText(trusted ? move : "—", size: 13, weight: .semibold, tint: Theme.ink)
-            Circle()
-                .fill(trusted ? advantageTint(evalText) : Theme.mute)
-                .frame(width: 5, height: 5)
+        Group {
+            switch presentation {
+            case .move:
+                HStack(spacing: 6) {
+                    Text(move)
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                    Image(systemName: caret)
+                        .font(.system(size: 7, weight: .semibold))
+                        .foregroundStyle(accent)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Best move \(move)")
+            case .pending:
+                Text("…")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.white.opacity(0.55))
+                    .accessibilityLabel("Reading the board")
+            case .rejected:
+                Text("—")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color.white.opacity(0.55))
+                    .accessibilityLabel("No move because the board could not be read")
+            }
         }
     }
 }
@@ -301,212 +347,152 @@ public struct IslandMinimal: View {
         self.accent = accent
     }
 
-    public var body: some View {
-        Group {
-            switch presentation {
-            case .move:
-                PieceBadge(symbol: symbol, accent: accent, diameter: 18)
-            case .pending:
-                ProgressRing(value: 0.62, lineWidth: 2, tint: Theme.gold)
-                    .frame(width: 15, height: 15)
-            case .rejected:
-                Image(systemName: "exclamationmark")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Theme.gold)
-            }
-        }
-    }
-}
-
-// MARK: - Expanded regions
-
-public struct IslandExpandedLeading: View {
-    let state: BestMoveAttributes.ContentState
-    var thinking: Bool = false
-
-    public init(state: BestMoveAttributes.ContentState, thinking: Bool = false) {
-        self.state = state
-        self.thinking = thinking
-    }
-
-    private var presentation: IslandPresentation { IslandPresentation(state) }
-
-    public var body: some View {
-        Group {
-            switch presentation {
-            case .move:
-                PieceBadge(symbol: state.pieceSymbol,
-                           accent: IslandAccent.resolve(state),
-                           diameter: 36)
-            case .pending:
-                ProgressRing(value: 0.62, lineWidth: 2.5, tint: Theme.gold)
-                    .frame(width: 30, height: 30)
-            case .rejected:
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Theme.panel)
-                    .frame(width: 36, height: 36)
-                    .overlay(
-                        Image(systemName: "exclamationmark")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(Theme.gold)
-                    )
-            }
-        }
-    }
-}
-
-public struct IslandExpandedMove: View {
-    let state: BestMoveAttributes.ContentState
-
-    public init(state: BestMoveAttributes.ContentState) { self.state = state }
-
-    private var presentation: IslandPresentation { IslandPresentation(state) }
-
-    public var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            if presentation == .move {
-                // One line only: the evaluation already appears in the trailing pill, and a
-                // second line here was what pushed the card into the island's border.
-                SteadyText(state.displayMove, size: 24, weight: .semibold, tint: Theme.ink)
-            } else if presentation == .pending {
-                Text("Waiting for a screenshot")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Theme.ink.opacity(0.75))
-                    .lineLimit(1)
-            } else {
-                Text("Couldn't read that board")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Theme.ink.opacity(0.75))
-                    .lineLimit(1)
-            }
-        }
-        .animation(Spring.snappy, value: presentation == .move)
-    }
-}
-
-/// The strip under the move: the reason, or the waiting state.
-public struct IslandExpandedDetail: View {
-    let state: BestMoveAttributes.ContentState
-
-    public init(state: BestMoveAttributes.ContentState) { self.state = state }
-
-    private var presentation: IslandPresentation { IslandPresentation(state) }
-
-    /// Where the pipeline is, for the segmented meter.
-    ///
-    /// Four beats: frame, track, search, answer. An Apple-style segmented progress reads as
-    /// "something is happening" without a spinner, and it becomes a scoreboard once the answer
-    /// lands -- the finished move is the fourth segment.
-    private var stage: Int {
+    private var spoken: String {
         switch presentation {
-        case .pending: return state.trusted ? 2 : 0
-        case .move, .rejected: return 3
+        case .move: return "Best move \(move)"
+        case .pending: return "Reading the board"
+        case .rejected: return "No move because the board could not be read"
         }
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            // The move and the evaluation live in the Island's own leading/centre/trailing
-            // regions -- Apple's layout, and the reason the top of the island is never blank.
-            // Repeating them here made the card say everything twice.
-            Group {
-                if presentation == .pending {
-                    ShimmerText(state.why.isEmpty ? "Waiting for a screenshot" : state.why,
-                                size: 13)
-                } else if presentation == .rejected {
-                    Text(state.why.isEmpty ? "Frame the whole board and try again" : state.why)
-                        .font(.system(size: 13))
-                        .foregroundStyle(Theme.mute)
-                } else {
-                    Text(state.why)
-                        .font(.system(size: 13.5, weight: .regular))
-                        .lineSpacing(2)
-                        .foregroundStyle(Theme.ink.opacity(0.85))
-                        .lineLimit(2)
-                        .truncationMode(.tail)
-                }
-            }
-            .fixedSize(horizontal: false, vertical: true)
-
-        }
-        .padding(.bottom, 1)
+        PieceTile(symbol: symbol, presentation: presentation,
+                  size: 18, showsTile: false)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(spoken)
     }
 }
 
+// MARK: - Expanded
 
-/// The expanded card as one piece, for the in-app studio.
+/// The expanded view is one block. The art tile, notation, and state sit on one row, and one
+/// bounded line sits beneath. Everything is on the Island's black. There is no region
+/// background, no nested card, and nothing in the rounded top corners.
 public struct IslandExpandedCard: View {
     let state: BestMoveAttributes.ContentState
-    public init(state: BestMoveAttributes.ContentState) { self.state = state }
 
-    public var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 10) {
-                IslandExpandedLeading(state: state)
-                IslandExpandedMove(state: state)
-                Spacer(minLength: 4)
-                EvalPill(evalText: state.youEval, trusted: state.trusted)
-            }
-            IslandExpandedDetail(state: state)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-    }
-}
-
-// MARK: - Lock screen
-
-public struct LockScreenCard: View {
-    let state: BestMoveAttributes.ContentState
     public init(state: BestMoveAttributes.ContentState) { self.state = state }
 
     private var presentation: IslandPresentation { IslandPresentation(state) }
-    private var accent: Color { IslandAccent.resolve(state) }
+
+    private var title: String {
+        switch presentation {
+        case .move: return state.displayMove
+        case .pending: return "Reading the board"
+        case .rejected: return "Couldn't read the board"
+        }
+    }
+
+    /// The text is bounded at the source by `MoveExplainer.islandTipLimit`. The view never
+    /// ellipsizes a generated sentence.
+    private var subline: String {
+        switch presentation {
+        case .move: return state.tip
+        case .pending: return state.why
+        case .rejected: return state.why.isEmpty ? "Frame the whole board and try again" : state.why
+        }
+    }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Rectangle().fill(accent).frame(width: 14, height: 2)
-                Text("SNSE")
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                    .tracking(2)
-                    .foregroundStyle(Theme.mute)
-                Spacer()
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 12) {
+                PieceTile(symbol: state.pieceSymbol, presentation: presentation, size: 34)
+                    .accessibilityHidden(true)
+
+                Text(title)
+                    .font(.system(size: presentation == .move ? Island.moveSize : 19,
+                                  weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.55)
+
+                Spacer(minLength: 8)
+
                 if presentation == .move {
                     EvalPill(evalText: state.youEval, trusted: state.trusted)
                 }
             }
 
-            HStack(alignment: .center, spacing: 10) {
-                if presentation == .move {
-                    PieceBadge(symbol: state.pieceSymbol, accent: accent, diameter: 30)
-                    SteadyText(state.displayMove, size: 28, weight: .semibold, tint: Theme.ink)
-                } else if presentation == .pending {
-                    ShimmerText("Reading the board", size: 15)
-                } else {
-                    Text("Couldn't read")
-                        .font(.system(size: 24, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Theme.ink.opacity(0.85))
-                }
-                Spacer(minLength: 0)
-            }
-
-            if presentation == .move, !state.why.isEmpty {
-                Text(state.why)
-                    .font(.system(size: 13, weight: .medium))
-                    .lineSpacing(1.2)
-                    .foregroundStyle(Theme.ink.opacity(0.78))
+            if !subline.isEmpty {
+                Text(subline)
+                    .font(.system(size: Island.whySize, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.66))
+                    .lineSpacing(1.5)
                     .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 8)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+// MARK: - Lock screen
+
+/// The lock card uses the same block on a dark card. It has one hairline and no gradient
+/// border.
+public struct LockScreenCard: View {
+    let state: BestMoveAttributes.ContentState
+    public init(state: BestMoveAttributes.ContentState) { self.state = state }
+
+    private var presentation: IslandPresentation { IslandPresentation(state) }
+
+    private var title: String {
+        switch presentation {
+        case .move: return state.displayMove
+        case .pending: return "Reading the board"
+        case .rejected: return "Couldn't read"
+        }
+    }
+
+    private var subline: String {
+        switch presentation {
+        case .move: return state.tip
+        case .pending: return state.why
+        case .rejected: return state.why.isEmpty ? "Frame the whole board and try again" : state.why
+        }
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                PieceTile(symbol: state.pieceSymbol, presentation: presentation, size: 36)
+                    .accessibilityHidden(true)
+
+                Text(title)
+                    .font(.system(size: presentation == .move ? 26 : 19,
+                                  weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.55)
+
+                Spacer(minLength: 8)
+
+                if presentation == .move {
+                    EvalPill(evalText: state.youEval, trusted: state.trusted)
+                }
             }
 
-            if presentation == .move, !state.youEval.isEmpty {
-                AdvantageBar(evalText: state.youEval, height: 3, tint: advantageTint(state.youEval))
+            if !subline.isEmpty {
+                Text(subline)
+                    .font(.system(size: 13.5, weight: .medium))
+                    .lineSpacing(1.5)
+                    .foregroundStyle(Color.white.opacity(0.72))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(16)
+        .background(
+            Color(red: 0.048, green: 0.048, blue: 0.056),
+            in: RoundedRectangle(cornerRadius: 26, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+        )
         .accessibilityElement(children: .combine)
     }
 }

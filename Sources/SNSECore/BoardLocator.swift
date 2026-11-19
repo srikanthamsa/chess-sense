@@ -146,4 +146,132 @@ public enum BoardLocator {
         }
         return best
     }
+
+    // MARK: - Theme-agnostic location
+
+    /// A square is "boardish" if it is either coloured or bright.
+    ///
+    /// Every chess board is one or the other: lichess is green on cream, TakeTakeTake is
+    /// lavender, chess.com is green on buff. The chrome around a board -- dark backgrounds,
+    /// translucent headers, photographic blur -- is neither, which is what makes this a
+    /// portable filter where "cube of two specific colours" was not.
+    @inline(__always)
+    public static func isBoardish(_ r: Int, _ g: Int, _ b: Int) -> Bool {
+        let l = luma(r, g, b)
+        // A floor well above black chrome: the blurred photographic backgrounds these apps
+        // put behind a board sit near 0.15 and would otherwise read as board everywhere.
+        guard l > 0.34 else { return false }
+        let maxC = Double(max(r, g, b)) / 255.0
+        let minC = Double(min(r, g, b)) / 255.0
+        let saturation = maxC == 0 ? 0 : (maxC - minC) / maxC
+        return saturation >= 0.10 || l >= 0.68
+    }
+
+    /// Finds a board without knowing its theme.
+    ///
+    /// Longest run of rows that are mostly "boardish", then columns within it, then the
+    /// checkerboard check: two parities must genuinely differ. Every threshold is tried and
+    /// the best-scoring candidate wins, because the right threshold depends on how much of
+    /// the frame the board occupies -- a single guess picked a 749 px band out of a 1206 px
+    /// board on the first lichess screenshot.
+    public static func locateGeneric(_ image: PixelImage) -> BoardRect? {
+        let w = image.width, h = image.height
+        guard w > 200, h > 200 else { return nil }
+
+        var rowHits = [Double](repeating: 0, count: h)
+        for y in 0..<h {
+            var hit = 0
+            var o = y * w * 4
+            for _ in 0..<w {
+                if isBoardish(Int(image.rgba[o]), Int(image.rgba[o + 1]), Int(image.rgba[o + 2])) {
+                    hit += 1
+                }
+                o += 4
+            }
+            rowHits[y] = Double(hit) / Double(w)
+        }
+
+        var best: (BoardRect, Double)?
+        for threshold in [0.55, 0.45, 0.35, 0.25] {
+            guard let rows = longestFractionRun(rowHits, threshold: threshold) else { continue }
+            let bandHeight = rows.upperBound - rows.lowerBound
+            guard bandHeight > 120 else { continue }
+
+            var colHits = [Double](repeating: 0, count: w)
+            for x in 0..<w {
+                var hit = 0
+                for y in rows.lowerBound..<rows.upperBound {
+                    let o = (y * w + x) * 4
+                    if isBoardish(Int(image.rgba[o]), Int(image.rgba[o + 1]), Int(image.rgba[o + 2])) {
+                        hit += 1
+                    }
+                }
+                colHits[x] = Double(hit) / Double(bandHeight)
+            }
+            guard let cols = longestFractionRun(colHits, threshold: threshold)
+                    ?? longestFractionRun(colHits, threshold: threshold * 0.7)
+            else { continue }
+
+            var rect = BoardRect(
+                x: cols.lowerBound,
+                y: rows.lowerBound,
+                width: cols.upperBound - cols.lowerBound,
+                height: bandHeight
+            )
+            guard rect.isPlausible, rect.width >= 200 else { continue }
+            if abs(rect.height - rect.width) > max(4, rect.width / 12) {
+                let centre = rect.y + rect.height / 2
+                rect.y = max(0, centre - rect.width / 2)
+                rect.height = rect.width
+            }
+            guard rect.isPlausible else { continue }
+            let agreement = checkerboardAgreement(image, rect)
+            guard agreement > 0.35 else { continue }
+            let score = Double(rect.width * rect.height) * agreement
+            if best == nil || score > best!.1 { best = (rect, score) }
+        }
+        return best?.0
+    }
+
+    /// Longest contiguous run where the fraction values stay at or above a threshold.
+    static func longestFractionRun(_ values: [Double], threshold: Double) -> Range<Int>? {
+        var best: Range<Int>?
+        var start = -1
+        for i in 0...values.count {
+            let above = i < values.count && values[i] >= threshold
+            if above {
+                if start < 0 { start = i }
+            } else if start >= 0 {
+                let run = start..<i
+                if best == nil || run.count > best!.count { best = run }
+                start = -1
+            }
+        }
+        return best
+    }
+
+    /// How much the candidate rect looks like a chessboard: the two parities must differ.
+    private static func checkerboardAgreement(_ image: PixelImage, _ rect: BoardRect) -> Double {
+        guard rect.width > 0, rect.height > 0 else { return 0 }
+        var light: [Double] = []
+        var dark: [Double] = []
+        for rank in 0..<8 {
+            for file in 0..<8 {
+                let cell = rect.squareRect(rank: rank, file: file)
+                // Corners avoid the piece in the middle of a square.
+                for (fx, fy) in [(0.2, 0.2), (0.8, 0.2), (0.2, 0.8), (0.8, 0.8)] {
+                    let x = cell.x + Int(Double(cell.w) * fx)
+                    let y = cell.y + Int(Double(cell.h) * fy)
+                    guard x >= 0, y >= 0, x < image.width, y < image.height else { continue }
+                    let o = (y * image.width + x) * 4
+                    let l = luma(Int(image.rgba[o]), Int(image.rgba[o + 1]), Int(image.rgba[o + 2]))
+                    if (rank + file) % 2 == 0 { light.append(l) } else { dark.append(l) }
+                }
+            }
+        }
+        guard !light.isEmpty, !dark.isEmpty else { return 0 }
+        let lightMean = light.reduce(0, +) / Double(light.count)
+        let darkMean = dark.reduce(0, +) / Double(dark.count)
+        return min(1, abs(lightMean - darkMean) / 0.18)
+    }
 }

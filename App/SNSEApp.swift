@@ -8,6 +8,15 @@ struct SNSEApp: App {
         EngineRegistry.registerLocal(LocalStockfishBackend.shared)
         // Pay Stockfish's start-up before the first screenshot, not after it.
         Task.detached(priority: .utility) { LocalStockfishBackend.shared.warmUp() }
+
+#if DEBUG
+        // `-snse-island coaching` puts a studio sample on the real Island for design review.
+        if let raw = UserDefaults.standard.string(forKey: "snse-island"),
+           let sample = DesignStudioView.Sample(rawValue: raw) {
+            let state = sample.state
+            Task { await LiveActivityController.preview(state) }
+        }
+#endif
     }
 
     var body: some Scene {

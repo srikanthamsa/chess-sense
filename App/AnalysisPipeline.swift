@@ -184,8 +184,10 @@ enum AnalysisPipeline {
                     }
                     return ""
                 } ?? "",
+                // The text is bounded at the source, not in the view. The Island and the lock
+                // card can hold about 60 characters before the sentence has to be cut.
                 tip: explained.map {
-                    MoveExplainer.order(move: $0, in: position, evalText: move.evalText)
+                    MoveExplainer.islandTip(move: $0, in: position, evalText: move.evalText)
                 } ?? "",
                 timings: describe(read: readMs, track: trackMs,
                                   engine: Date().timeIntervalSince(engineStart),

@@ -57,11 +57,27 @@ enum LiveActivityController {
     /// has already been shown; the move itself never waits on the model.
     static func updateTip(_ text: String) async {
         guard let activity = Activity<BestMoveAttributes>.activities.first else { return }
+        let bounded = MoveExplainer.clamped(text)
         var state = activity.content.state
-        guard state.tip != text else { return }
-        state.tip = text
+        guard !bounded.isEmpty, state.tip != bounded else { return }
+        state.tip = bounded
         await activity.update(ActivityContent(state: state, staleDate: nil))
     }
+
+#if DEBUG
+    /// Studio only: shows an arbitrary sample on the real Island without running the whole
+    /// board pipeline. Debug builds keep it; release builds never compile it.
+    static func preview(_ state: BestMoveAttributes.ContentState) async {
+        if let activity = Activity<BestMoveAttributes>.activities.first {
+            await activity.update(ActivityContent(state: state, staleDate: nil))
+        } else {
+            _ = try? Activity<BestMoveAttributes>.request(
+                attributes: BestMoveAttributes(),
+                content: ActivityContent(state: state, staleDate: nil)
+            )
+        }
+    }
+#endif
 
     /// Pure: what the activity should hold for a given outcome.
     ///
@@ -73,6 +89,9 @@ enum LiveActivityController {
         _ move: EngineMove?, why: String, trusted: Bool,
         playerEval: String, pieceSymbol: String, tip: String
     ) -> BestMoveAttributes.ContentState {
+        // The controller applies the same limit as the generator. A caller with an older or
+        // unclamped string cannot reintroduce a mid-word ellipsis.
+        let boundedTip = MoveExplainer.clamped(tip.isEmpty ? why : tip)
         if let move, trusted {
             return .init(
                 uci: move.uci,
@@ -84,7 +103,7 @@ enum LiveActivityController {
                 why: why,
                 playerEval: playerEval,
                 pieceSymbol: pieceSymbol,
-                tip: tip
+                tip: boundedTip
             )
         }
         return .init(

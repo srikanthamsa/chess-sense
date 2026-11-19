@@ -11,19 +11,11 @@ struct BestMoveLiveActivity: Widget {
         } dynamicIsland: { context in
             let accent = IslandAccent.resolve(context.state)
             return DynamicIsland {
-                // Apple's own layout: identifier across the top, detail underneath. The glow
-                // lives on the detail strip so it traces something real.
-                DynamicIslandExpandedRegion(.leading) {
-                    IslandExpandedLeading(state: context.state)
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    EvalPill(evalText: context.state.youEval, trusted: context.state.trusted)
-                }
+                // One inset block in `center`, below the camera. Leading and trailing stay
+                // empty so nothing touches the rounded top corners, and no separate bottom
+                // region creates a visible edge.
                 DynamicIslandExpandedRegion(.center) {
-                    IslandExpandedMove(state: context.state)
-                }
-                DynamicIslandExpandedRegion(.bottom) {
-                    IslandExpandedDetail(state: context.state)
+                    IslandExpandedCard(state: context.state)
                 }
             } compactLeading: {
                 IslandCompactLeading(move: context.state.displayMove,
@@ -35,7 +27,8 @@ struct BestMoveLiveActivity: Widget {
                 IslandCompactTrailing(move: context.state.displayMove,
                                       trusted: context.state.trusted,
                                       accent: accent,
-                                      evalText: context.state.youEval)
+                                      evalText: context.state.youEval,
+                                      presentation: IslandPresentation(context.state))
             } minimal: {
                 IslandMinimal(move: context.state.displayMove,
                               presentation: IslandPresentation(context.state),

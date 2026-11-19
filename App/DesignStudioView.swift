@@ -26,11 +26,12 @@ struct DesignStudioView: View {
         var state: BestMoveAttributes.ContentState {
             switch self {
             case .waiting:
-                // Mirrors `LiveActivityController.start()`: nothing has been read, so there
+                // Mirrors `LiveActivityController.start()`. Nothing has been read, so there
                 // is no evaluation to show.
                 return .init(uci: "----", san: "", evalText: "",
                              principalVariation: "", provenance: "waiting for a screenshot",
-                             trusted: true, why: "", playerEval: "", pieceSymbol: "")
+                             trusted: true, why: "Play a move, then screenshot the board.",
+                             playerEval: "", pieceSymbol: "")
             case .thinking:
                 return .init(uci: "----", san: "", evalText: "+0.20",
                              principalVariation: "", provenance: "reading the board",
@@ -63,20 +64,20 @@ struct DesignStudioView: View {
         ZStack {
             Color.black.ignoresSafeArea()
             ScrollView {
-            VStack(spacing: 26) {
+            VStack(spacing: 24) {
                 Picker("Sample", selection: $sample) {
                     ForEach(Sample.allCases) { Text($0.label).tag($0) }
                 }
                 .pickerStyle(.segmented)
 
                 Group {
-                    caption("Compact · live activity")
+                    caption("Compact live activity")
                     compact
 
                     caption("Minimal")
                     minimalRow
 
-                    caption("Evaluation chip and bar")
+                    caption("Evaluation readout")
                     evalRow
 
                     caption("Expanded")
@@ -101,13 +102,12 @@ struct DesignStudioView: View {
     private func caption(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 11, weight: .semibold))
-            .tracking(1.2)
-            .foregroundStyle(.white.opacity(0.4))
+            .foregroundStyle(.white.opacity(0.5))
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var compact: some View {
-        HStack(spacing: 26) {
+        HStack(spacing: 24) {
             HStack(spacing: 8) {
                 IslandCompactLeading(move: sample.state.displayMove,
                                      trusted: sample.state.trusted,
@@ -117,10 +117,11 @@ struct DesignStudioView: View {
                 IslandCompactTrailing(move: sample.state.displayMove,
                                       trusted: sample.state.trusted,
                                       accent: IslandAccent.resolve(sample.state),
-                                      evalText: sample.state.youEval)
+                                      evalText: sample.state.youEval,
+                                      presentation: IslandPresentation(sample.state))
             }
-            .padding(.horizontal, 14)
-            .frame(height: 37)
+            .padding(.horizontal, 16)
+            .frame(height: 36)
             .background(Capsule().fill(.black))
             .overlay(Capsule().strokeBorder(.white.opacity(0.06)))
 
@@ -129,7 +130,7 @@ struct DesignStudioView: View {
                     .foregroundStyle(.white)
             }
             .padding(10)
-            .frame(height: 37)
+            .frame(height: 36)
             .background(Capsule().fill(.black))
             .overlay(Capsule().strokeBorder(.white.opacity(0.06)))
         }
@@ -139,8 +140,8 @@ struct DesignStudioView: View {
     private var minimalRow: some View {
         HStack(spacing: 12) {
             HStack { IslandMinimal(move: sample.state.displayMove, presentation: IslandPresentation(sample.state), symbol: sample.state.pieceSymbol, accent: IslandAccent.resolve(sample.state)) }
-                .padding(.horizontal, 11)
-                .frame(height: 34)
+                .padding(.horizontal, 12)
+                .frame(height: 36)
                 .background(Capsule().fill(.black))
                 .overlay(Capsule().strokeBorder(.white.opacity(0.06)))
             Spacer()
@@ -149,34 +150,23 @@ struct DesignStudioView: View {
     }
 
     private var evalRow: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 16) {
             EvalPill(evalText: sample.state.youEval, trusted: sample.state.trusted)
-            AdvantageBar(evalText: sample.state.youEval).frame(width: 200)
             Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var expanded: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 12) {
-                IslandExpandedLeading(state: sample.state, thinking: sample == .thinking)
-                IslandExpandedMove(state: sample.state)
-                Spacer(minLength: 4)
-                EvalPill(evalText: sample.state.youEval, trusted: sample.state.trusted)
-            }
-            IslandExpandedDetail(state: sample.state)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 42, style: .continuous)
-                .fill(.black)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 42, style: .continuous)
-                        .strokeBorder(.white.opacity(0.07))
-                )
-        )
+        IslandExpandedCard(state: sample.state)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 42, style: .continuous)
+                    .fill(.black)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 42, style: .continuous)
+                            .strokeBorder(.white.opacity(0.07))
+                    )
+            )
     }
 }

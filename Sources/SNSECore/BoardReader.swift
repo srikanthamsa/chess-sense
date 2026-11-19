@@ -49,7 +49,7 @@ public enum BoardReader {
         // end of the pixel buffer -- that crashed the app on the first streamed frame.
         // Accept it only when it still fits this image; otherwise locate the board again.
         let supplied = rect.flatMap { fits($0, in: image) ? $0 : nil }
-        guard let board = supplied ?? BoardLocator.locate(image) else {
+        guard let board = supplied ?? BoardLocator.locate(image) ?? BoardLocator.locateGeneric(image) else {
             throw BoardError.boardNotFound
         }
         let palette = BoardPalette.estimate(image: image, rect: board)
@@ -142,7 +142,7 @@ public enum BoardReader {
         // end of the pixel buffer -- that crashed the app on the first streamed frame.
         // Accept it only when it still fits this image; otherwise locate the board again.
         let supplied = rect.flatMap { fits($0, in: image) ? $0 : nil }
-        guard let board = supplied ?? BoardLocator.locate(image) else {
+        guard let board = supplied ?? BoardLocator.locate(image) ?? BoardLocator.locateGeneric(image) else {
             throw BoardError.boardNotFound
         }
         let palette = BoardPalette.estimate(image: image, rect: board)
