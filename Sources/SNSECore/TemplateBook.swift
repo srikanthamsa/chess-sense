@@ -187,4 +187,15 @@ public extension TemplateBook {
             squareSize: squareSize
         )
     }
+
+    /// Templates for lichess, generated from the bundled piece art rather than learned
+    /// from a screenshot. Used when a learned book cannot describe the frame in front of it.
+    public static var lichess: TemplateBook {
+        TemplateBook(
+            entries: LichessBook.entries,
+            maxShapeDistance: LichessBook.maxShapeDistance,
+            maxColorDistance: LichessBook.maxColorDistance,
+            squareSize: LichessBook.squareSize
+        )
+    }
 }
