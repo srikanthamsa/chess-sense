@@ -11,28 +11,12 @@ struct BestMoveLiveActivity: Widget {
         } dynamicIsland: { context in
             let accent = IslandAccent.resolve(context.state)
             return DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    // The trailing/leading content sits close to the corner curve; a small
-                    // inset keeps the eval badge from being clipped by it.
-                    IslandExpandedLeading(state: context.state)
-                        .padding(.leading, 2)
-                }
-                DynamicIslandExpandedRegion(.center) {
-                    IslandExpandedMove(state: context.state)
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    EvalPill(evalText: context.state.youEval,
-                             trusted: context.state.trusted)
-                        .padding(.trailing, 6)
-                }
+                // One card in the bottom region: the glow needs a single outline to trace.
                 DynamicIslandExpandedRegion(.bottom) {
-                    IslandExpandedBottom(state: context.state)
+                    IslandExpandedCard(state: context.state)
                 }
             } compactLeading: {
-                IslandCompactLeading(move: context.state.displayMove,
-                                     trusted: context.state.trusted,
-                                     accent: accent,
-                                     presentation: IslandPresentation(context.state))
+                IslandCompactLeading(trusted: context.state.trusted, accent: accent)
             } compactTrailing: {
                 IslandCompactTrailing(move: context.state.displayMove,
                                       trusted: context.state.trusted,

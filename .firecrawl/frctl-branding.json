@@ -1,0 +1,174 @@
+{
+  "branding": {
+    "colorScheme": "light",
+    "fonts": [
+      {
+        "family": "Jet Brains Mono",
+        "role": "monospace"
+      },
+      {
+        "family": "Inter Tight",
+        "role": "body"
+      },
+      {
+        "family": "Bricolage Grotesque",
+        "role": "heading"
+      }
+    ],
+    "colors": {
+      "primary": "#FF24D5",
+      "secondary": "#00ECF7",
+      "accent": "#9E9EFF",
+      "background": "#FAF7FB",
+      "textPrimary": "#B3ABB4",
+      "link": "#9E9EFF"
+    },
+    "typography": {
+      "fontFamilies": {
+        "primary": "Inter Tight",
+        "heading": "Bricolage Grotesque"
+      },
+      "fontStacks": {
+        "heading": [
+          "Bricolage Grotesque",
+          "Segoe UI",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif"
+        ],
+        "body": [
+          "Inter Tight",
+          "Segoe UI",
+          "ui-sans-serif",
+          "system-ui",
+          "sans-serif"
+        ],
+        "paragraph": [
+          "JetBrains Mono",
+          "ui-monospace",
+          "Cascadia Mono",
+          "Consolas",
+          "monospace"
+        ]
+      },
+      "fontSizes": {
+        "h1": "30px",
+        "h2": "64px",
+        "body": "11px"
+      }
+    },
+    "spacing": {
+      "baseUnit": 4,
+      "borderRadius": "4px"
+    },
+    "components": {
+      "input": {
+        "background": "#737373",
+        "textColor": "#FAF7FB",
+        "borderColor": "#FFFFFF",
+        "borderRadius": "4px",
+        "borderRadiusCorners": {
+          "topLeft": "4px",
+          "topRight": "4px",
+          "bottomRight": "4px",
+          "bottomLeft": "4px"
+        },
+        "shadow": "none"
+      },
+      "buttonPrimary": {
+        "background": "#FAF7FB",
+        "textColor": "#010001",
+        "borderRadius": "999px",
+        "borderRadiusCorners": {
+          "topLeft": "999px",
+          "topRight": "999px",
+          "bottomRight": "999px",
+          "bottomLeft": "999px"
+        },
+        "shadow": "none"
+      },
+      "buttonSecondary": {
+        "background": "#848285",
+        "textColor": "#FAF7FB",
+        "borderColor": "#FFFFFF",
+        "borderRadius": "999px",
+        "borderRadiusCorners": {
+          "topLeft": "999px",
+          "topRight": "999px",
+          "bottomRight": "999px",
+          "bottomLeft": "999px"
+        },
+        "shadow": "none"
+      }
+    },
+    "images": {
+      "logo": "https://frctl.live/brand/frctl-wordmark-1674.webp",
+      "favicon": "https://frctl.live/favicon-192.png",
+      "ogImage": "https://frctl.live/og-card.jpg",
+      "logoHref": "/",
+      "logoAlt": "FRCTL"
+    },
+    "personality": {
+      "tone": "modern",
+      "energy": "high",
+      "targetAudience": "creative professionals"
+    },
+    "designSystem": {
+      "framework": "custom",
+      "componentLibrary": ""
+    },
+    "confidence": {
+      "buttons": 0.86,
+      "colors": 0.7266666666666667,
+      "overall": 0.7933333333333333
+    },
+    "brandName": "FRCTL",
+    "logo": "https://frctl.live/brand/frctl-wordmark-1674.webp"
+  },
+  "metadata": {
+    "twitter:card": "summary_large_image",
+    "robots": "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+    "twitter:site": "@frctlvisuals",
+    "description": "A browser-based VJ studio for DJs and visual artists. Audio-reactive effects, custom shaders, live performance decks and exports up to 4K. Free to start.",
+    "ogSiteName": "FRCTL",
+    "og:title": "FRCTL — VJ Software for Live, Audio-Reactive Visuals",
+    "og:image:width": "1200",
+    "ogDescription": "A browser-based VJ studio for DJs and visual artists. Audio-reactive effects, custom shaders, live performance decks and exports up to 4K. Free to start.",
+    "og:description": "A browser-based VJ studio for DJs and visual artists. Audio-reactive effects, custom shaders, live performance decks and exports up to 4K. Free to start.",
+    "og:image:height": "630",
+    "viewport": "width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content",
+    "og:image": "https://frctl.live/og-card.jpg",
+    "og:locale": "en_US",
+    "twitter:title": "FRCTL — VJ Software for Live, Audio-Reactive Visuals",
+    "twitter:image": "https://frctl.live/og-card.jpg",
+    "language": "en",
+    "twitter:description": "A browser-based VJ studio for DJs and visual artists. Audio-reactive effects, custom shaders, live performance decks and exports up to 4K. Free to start.",
+    "og:type": "website",
+    "ogUrl": "https://frctl.live/",
+    "title": "FRCTL — VJ Software for Live, Audio-Reactive Visuals",
+    "ogTitle": "FRCTL — VJ Software for Live, Audio-Reactive Visuals",
+    "ogImage": "https://frctl.live/og-card.jpg",
+    "twitter:image:alt": "The FRCTL wordmark over a live generative colour field",
+    "ogLocale": "en_US",
+    "og:url": "https://frctl.live/",
+    "theme-color": "#0b0b0f",
+    "og:image:alt": "The FRCTL wordmark over a live generative colour field",
+    "og:site_name": "FRCTL",
+    "favicon": "https://frctl.live/favicon-192.png",
+    "scrapeId": "01a1f273-f730-75ba-aee2-ae8f8a0ac8f8",
+    "sourceURL": "https://frctl.live/",
+    "url": "https://frctl.live/",
+    "statusCode": 200,
+    "contentType": "text/html; charset=utf-8",
+    "timezone": "America/New_York",
+    "proxyUsed": "basic",
+    "indexId": "5732edcf-2556-49a1-b8c4-47b17837f7cd",
+    "creditsUsed": 1,
+    "concurrencyLimited": false
+  },
+  "images": [
+    "https://frctl.live/brand/frctl-wordmark-1674.webp",
+    "https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1256763&theme=dark&t=1790361543165",
+    "https://launchbuff.com/badge-featured-dark.svg"
+  ]
+}

@@ -1,11 +1,12 @@
 import PhotosUI
 import SwiftUI
 
-/// SNSE — an editorial, technical page rather than a dashboard.
+/// SNSE — an app, not a page.
 ///
-/// Near-black canvas, one magenta doing all the pointing, hairlines instead of boxes, and
-/// hierarchy built from scale and long vertical intervals. Labels are monospaced and tracked;
-/// the move is a single oversized word, because it is the only thing anyone opens this for.
+/// Everything that was page furniture (numbered anchors, taglines, footer badges, an FAQ) is
+/// gone or moved into a settings sheet. What remains is the three things an app has: a brand
+/// statement, the current answer, and the board it came from — with the actions pinned where a
+/// thumb can reach them.
 struct ContentView: View {
     private let store = CalibrationStore()
 
@@ -13,12 +14,14 @@ struct ContentView: View {
 
     // MARK: Palette
 
-    private let canvas = Color(red: 0.02, green: 0.02, blue: 0.02)      // #050505
-    private let panel = Color(red: 0.031, green: 0.031, blue: 0.035)    // #080809
-    private let hairline = Color(red: 0.10, green: 0.10, blue: 0.11)    // #1A1A1D
-    private let ink = Color(red: 0.957, green: 0.957, blue: 0.949)      // #F4F4F2
-    private let mute = Color(red: 0.467, green: 0.455, blue: 0.467)     // #777477
-    private let magenta = Color(red: 0.886, green: 0.102, blue: 0.635)  // #E21AA2
+    private let canvas = Color(red: 0.02, green: 0.02, blue: 0.02)
+    private let panel = Color(red: 0.035, green: 0.035, blue: 0.04)
+    private let hairline = Color(red: 0.10, green: 0.10, blue: 0.11)
+    private let ink = Color(red: 0.957, green: 0.957, blue: 0.949)
+    private let mute = Color(red: 0.467, green: 0.455, blue: 0.467)
+    private let magenta = Color(red: 0.886, green: 0.102, blue: 0.635)
+
+    private let startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
     // MARK: State
 
@@ -37,620 +40,244 @@ struct ContentView: View {
     @State private var lastMoveUCI: String?
     @State private var lastEval: String?
     @State private var lastWhy: String?
-    @State private var lastTimings = ""
 
-    @State private var keyDraft = ""
-    @State private var keySaved = false
-    @State private var openNote: Int?
+    @State private var showSettings = false
 
     // MARK: Body
 
     var body: some View {
-        ScrollViewReader { proxy in
+        ZStack(alignment: .top) {
+            canvas.ignoresSafeArea()
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    utilityHeader(proxy)
-                    taglineStrip
-                    hero
-                    statusRow
-                    positionSection.id("01")
-                    analysisSection.id("02")
-                    setupSection.id("03")
-                    notesSection
-                    footer
+                    brand
+                    answerCard
+                    boardSection
+                    if !detail.isEmpty { detailLine }
                 }
-                .padding(.horizontal, 22)
-                .padding(.bottom, 56)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 130)
             }
-            .background(canvas.ignoresSafeArea())
             .scrollIndicators(.hidden)
-            .overlay(alignment: .top) {
-                if busy {
-                    Rectangle()
-                        .fill(magenta)
-                        .frame(height: 2)
-                        .transition(.opacity)
-                }
-            }
-            .animation(.easeOut(duration: 0.2), value: busy)
-            .onAppear(perform: refresh)
-            .task {
-                guard SelfTest.requested else { return }
-                busy = true
-                let report = await SelfTest.run()
-                busy = false
-                headline = report.passed ? "SELF TEST PASSED" : "SELF TEST FAILED"
-                subline = report.passed ? "The whole pipeline ran on this device." : "See notes."
-                detail = report.text
-            }
-            .onChange(of: calibrationItem) { _, item in
-                guard let item else { return }
-                Task { await handle(item, intent: .calibrate) }
-            }
-            .onChange(of: analysisItem) { _, item in
-                guard let item else { return }
-                Task { await handle(item, intent: .analyse) }
-            }
-            .onAppear(perform: applyDemoIfRequested)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) { actionBar }
+        .overlay(alignment: .topTrailing) { settingsButton }
+        .sheet(isPresented: $showSettings) {
+            SettingsSheet(store: store, tracking: $tracking, onRefresh: refresh)
+        }
+        .onAppear(perform: refresh)
+        .onAppear(perform: applyDemoIfRequested)
+        .task {
+            guard SelfTest.requested else { return }
+            busy = true
+            let report = await SelfTest.run()
+            busy = false
+            headline = report.passed ? "SELF TEST PASSED" : "SELF TEST FAILED"
+            subline = report.passed ? "The whole pipeline ran on this device." : "See settings."
+            detail = report.text
+        }
+        .onChange(of: calibrationItem) { _, item in
+            guard let item else { return }
+            Task { await handle(item, intent: .calibrate) }
+        }
+        .onChange(of: analysisItem) { _, item in
+            guard let item else { return }
+            Task { await handle(item, intent: .analyse) }
         }
     }
 
-    // MARK: - 1 · Utility header
+    // MARK: - Brand
 
-    private func utilityHeader(_ proxy: ScrollViewProxy) -> some View {
-        HStack(alignment: .center, spacing: 12) {
-            HStack(spacing: 0) {
+    private var brand: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
                 Text("SN").foregroundStyle(ink)
                 Text("SE").foregroundStyle(magenta)
             }
-            .font(.system(size: 17, weight: .black))
-            .tracking(1.2)
+            .font(.system(size: 76, weight: .black).width(.compressed))
+            .tracking(-2.5)
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
 
-            Spacer(minLength: 8)
-
-            HStack(spacing: 14) {
-                ForEach([("01", "01"), ("02", "02"), ("03", "03")], id: \.0) { item in
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.28)) {
-                            proxy.scrollTo(item.1, anchor: .top)
-                        }
-                    } label: {
-                        Text(item.0)
-                            .font(.system(size: 10, weight: .medium, design: .monospaced))
-                            .tracking(1.4)
-                            .foregroundStyle(mute)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .frame(maxWidth: .infinity)
-
-            NavigationLink {
-                EngineProbeView()
-            } label: {
-                Text("ENGINE")
-                    .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
-                    .tracking(1.3)
-                    .foregroundStyle(ink)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .overlay(Capsule().strokeBorder(hairline, lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                Task { await setTracking(!tracking) }
-            } label: {
-                Text(tracking ? "LIVE" : "GO LIVE")
-                    .font(.system(size: 9.5, weight: .bold, design: .monospaced))
-                    .tracking(1.3)
-                    .foregroundStyle(canvas)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 7)
-                    .background(Capsule().fill(ink))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.top, 10)
-        .padding(.bottom, 14)
-    }
-
-    // MARK: - 2 · Micro-tagline strip
-
-    private var taglineStrip: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Rectangle().fill(hairline).frame(height: 1)
-            Text("ON-DEVICE STOCKFISH  ·  NO NETWORK  ·  PIXEL READ")
-                .font(.system(size: 8.5, weight: .medium, design: .monospaced))
-                .tracking(1.2)
-                .foregroundStyle(magenta)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .padding(.top, 9)
-                .padding(.bottom, 9)
-        }
-    }
-
-    // MARK: - 3 · Hero
-
-    private var hero: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(headline)
-                .font(.system(size: heroSize, weight: .black).width(.compressed))
-                .tracking(-1.5)
-                .lineLimit(1)
-                .minimumScaleFactor(0.4)
-                .foregroundStyle(ink)
-                .padding(.top, 26)
-                .contentTransition(.numericText())
-                .animation(.snappy(duration: 0.35), value: headline)
-
-            Text(subline)
-                .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(ink.opacity(0.72))
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 16)
-                .frame(maxWidth: 420, alignment: .leading)
-
-            HStack(alignment: .top, spacing: 24) {
-                VStack(alignment: .leading, spacing: 12) {
-                    PhotosPicker(selection: $analysisItem, matching: .images) {
-                        Text("SCREENSHOT  →")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .tracking(1.4)
-                            .foregroundStyle(canvas)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .background(Capsule().fill(ink))
-                    }
-                    .buttonStyle(.plain)
-
-                    PhotosPicker(selection: $calibrationItem, matching: .images) {
-                        Text("CALIBRATE")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .tracking(1.4)
-                            .foregroundStyle(ink)
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 12)
-                            .overlay(Capsule().strokeBorder(hairline, lineWidth: 1))
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                Spacer(minLength: 0)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    featureRow("01", "PIXELS", "board found and read")
-                    featureRow("02", "SEARCH", "stockfish, in-process")
-                    featureRow("03", "ISLAND", "answer above the game")
-                }
-                .frame(maxWidth: 190, alignment: .trailing)
-            }
-            .padding(.top, 26)
-        }
-    }
-
-    private var heroSize: CGFloat {
-        headline.count <= 4 ? 86 : headline.count <= 6 ? 64 : 44
-    }
-
-    private func featureRow(_ index: String, _ title: String, _ detail: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(index)
-                .font(.system(size: 9, weight: .medium, design: .monospaced))
-                .foregroundStyle(magenta)
-            VStack(alignment: .trailing, spacing: 1) {
-                Text(title)
-                    .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
-                    .tracking(1.2)
-                    .foregroundStyle(ink)
-                Text(detail)
-                    .font(.system(size: 10))
-                    .foregroundStyle(mute)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .trailing)
-    }
-
-    // MARK: - 4 · Status row
-
-    private var statusRow: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Rectangle().fill(hairline).frame(height: 1)
-            HStack {
-                HStack(spacing: 7) {
-                    Circle()
-                        .fill(tracking ? magenta : mute)
-                        .frame(width: 5, height: 5)
-                    Text(statusLabel)
-                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                        .tracking(1.5)
-                        .foregroundStyle(magenta)
-                }
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(tracking ? magenta : mute)
+                    .frame(width: 5, height: 5)
+                Text(statusLabel)
+                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .tracking(1.5)
+                    .foregroundStyle(tracking ? magenta : mute)
                 Spacer()
-                Text("SNSE · STOCKFISH 11 · d12")
+                Text("STOCKFISH 11 · d12")
                     .font(.system(size: 9, weight: .medium, design: .monospaced))
-                    .tracking(1.2)
+                    .tracking(1.1)
                     .foregroundStyle(mute)
             }
-            .padding(.vertical, 12)
+            .padding(.top, 6)
         }
-    }
-
-    private var boardSide: CGFloat {
-        UIScreen.main.bounds.width - 44
+        .padding(.top, 8)
     }
 
     private var statusLabel: String {
-        if !lastTimings.isEmpty { return "ANALYSIS · " + lastTimings }
-        if store.isCalibrated { return "CALIBRATED · READY" }
+        if store.isCalibrated { return tracking ? "LIVE" : "CALIBRATED" }
         return "UNCALIBRATED"
     }
 
-    // MARK: - 5 · 01 Position
+    // MARK: - Answer
 
-    private var positionSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            sectionLabel("01", "POSITION")
-            Text("The board, as the app read it.")
-                .font(.system(size: 34, weight: .semibold))
-                .tracking(-1)
-                .foregroundStyle(ink)
-                .padding(.top, 10)
-                .padding(.bottom, 18)
+    private var answerCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center, spacing: 10) {
+                Text(headline)
+                    .font(.system(size: 54, weight: .black).width(.compressed))
+                    .tracking(-1.2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.35)
+                    .foregroundStyle(lastMove == nil ? ink.opacity(0.9) : ink)
+                    .contentTransition(.numericText())
+                    .animation(.snappy(duration: 0.35), value: headline)
 
-            if let fen = trackedFEN, fen.contains("/") {
-                // An explicit square. `.frame(maxWidth: .infinity)` around the thumbnail's
-                // GeometryReader left the scroll view with an unbounded height to solve, and
-                // the window rendered black with the app still running.
-                BoardThumbnail(fen: fen, highlight: highlightSquares)
-                    .frame(width: boardSide, height: boardSide)
-                    .transition(.opacity)
-                Text(fen)
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(mute)
-                    .lineLimit(3)
-                    .textSelection(.enabled)
-                    .padding(.top, 12)
-            } else {
-                HStack {
-                    Text("NO POSITION YET")
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        .tracking(1.4)
-                        .foregroundStyle(mute)
-                    Spacer()
-                    Text("CALIBRATE, THEN SCREENSHOT")
-                        .font(.system(size: 9, weight: .medium, design: .monospaced))
-                        .tracking(1.2)
-                        .foregroundStyle(mute.opacity(0.7))
+                if let eval = lastEval, lastMove != nil {
+                    Text(eval)
+                        .font(.system(size: 13, weight: .bold, design: .monospaced))
+                        .foregroundStyle(eval.hasPrefix("-") ? Color(red: 0.97, green: 0.44, blue: 0.44)
+                                                             : Color(red: 0.36, green: 0.85, blue: 0.58))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(.white.opacity(0.06)))
+                        .transition(.scale.combined(with: .opacity))
                 }
-                .padding(.vertical, 30)
-                .overlay(alignment: .top) { Rectangle().fill(hairline).frame(height: 1) }
-                .overlay(alignment: .bottom) { Rectangle().fill(hairline).frame(height: 1) }
+                Spacer(minLength: 0)
             }
+
+            Text(lastWhy ?? subline)
+                .font(.system(size: 15))
+                .lineSpacing(3)
+                .foregroundStyle(ink.opacity(lastWhy == nil ? 0.55 : 0.8))
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.top, 84)
+        .padding(18)
+        .background(panel, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .intelligenceOverlay(
+            in: RoundedRectangle(cornerRadius: 22, style: .continuous),
+            lineWidths: lastMove == nil ? [1.5, 3, 5] : [1.5, 4, 7],
+            blurs: [0, 2, 7],
+            updateInterval: 0.6
+        )
+        .padding(.top, 22)
     }
 
-    // MARK: - 6 · 02 Analysis
+    // MARK: - Board
 
-    private var analysisSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            sectionLabel("02", "MOVE")
-            Text("What Stockfish would play, and why.")
-                .font(.system(size: 34, weight: .semibold))
-                .tracking(-1)
-                .foregroundStyle(ink)
-                .padding(.top, 10)
-                .padding(.bottom, 22)
-
-            VStack(spacing: 0) {
-                analysisRow("MOVE", lastMove ?? "—")
-                analysisRow("EVAL", lastEval ?? "—", emphasis: true)
-                analysisRow("TURN", turnText)
-                analysisRow("ENGINE", "STOCKFISH 11")
-            }
-
-            if let why = lastWhy, !why.isEmpty {
-                Text(why)
-                    .font(.system(size: 17, weight: .regular))
-                    .lineSpacing(4)
-                    .foregroundStyle(ink.opacity(0.86))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 20)
-            }
-
-            if !detail.isEmpty {
-                Text(detail)
-                    .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(mute)
-                    .padding(.top, 18)
-                    .textSelection(.enabled)
-            }
-        }
-        .padding(.top, 84)
-    }
-
-    private func analysisRow(_ label: String, _ value: String, emphasis: Bool = false) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(label)
-                .font(.system(size: 9, weight: .medium, design: .monospaced))
-                .tracking(1.5)
-                .foregroundStyle(mute)
-                .frame(width: 74, alignment: .leading)
-            Text(value)
-                .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                .tracking(0.4)
-                .foregroundStyle(emphasis ? magenta : ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 13)
-        .overlay(alignment: .bottom) { Rectangle().fill(hairline).frame(height: 1) }
-    }
-
-    // MARK: - 7 · 03 Setup
-
-    private var setupSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            sectionLabel("03", "SETUP")
-            Text("Two things to be useful.")
-                .font(.system(size: 34, weight: .semibold))
-                .tracking(-1)
-                .foregroundStyle(ink)
-                .padding(.top, 10)
-                .padding(.bottom, 22)
-
-            setupRow(
-                title: calibrationDate == nil ? "Not calibrated" : "Calibrated",
-                detail: calibrationDate.map { "One frame, " + Self.dateText($0) }
-                    ?? "One start-position screenshot",
-                trailing: AnyView(
-                    HStack(spacing: 12) {
-                        PhotosPicker(selection: $calibrationItem, matching: .images) {
-                            Text("PICK")
-                                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                .tracking(1.4)
-                                .foregroundStyle(ink)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .overlay(Capsule().strokeBorder(hairline, lineWidth: 1))
-                        }
-                        .buttonStyle(.plain)
-                        if calibrationDate != nil {
-                            Button {
-                                store.reset()
-                                refresh()
-                            } label: {
-                                Text("RESET")
-                                    .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                    .tracking(1.4)
-                                    .foregroundStyle(magenta)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                ),
-                live: calibrationDate != nil
-            )
-
-            setupRow(
-                title: keySaved ? "Coaching connected" : "Coaching offline",
-                detail: keySaved ? "Warmer wording from your key" : "On-device wording only",
-                trailing: AnyView(
-                    HStack(spacing: 10) {
-                        if keySaved {
-                            Button {
-                                APIKeyStore.clear()
-                                refresh()
-                            } label: {
-                                Text("REMOVE")
-                                    .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                    .tracking(1.4)
-                                    .foregroundStyle(magenta)
-                            }
-                            .buttonStyle(.plain)
-                        } else {
-                            TextField("sk-…", text: $keyDraft)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                                .font(.system(size: 11, design: .monospaced))
-                                .foregroundStyle(ink)
-                                .frame(width: 108)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(panel, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .strokeBorder(hairline, lineWidth: 1)
-                                )
-                            Button {
-                                _ = APIKeyStore.save(keyDraft)
-                                keyDraft = ""
-                                refresh()
-                            } label: {
-                                Text("SAVE")
-                                    .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                    .tracking(1.4)
-                                    .foregroundStyle(canvas)
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 8)
-                                    .background(Capsule().fill(ink))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                ),
-                live: keySaved
-            )
-
+    private var boardSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                NavigationLink {
-                    DesignStudioView()
-                } label: {
-                    Text("DESIGN STUDIO  →")
-                        .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
-                        .tracking(1.4)
-                        .foregroundStyle(ink)
+                Text("POSITION")
+                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .tracking(1.6)
+                    .foregroundStyle(mute)
+                Spacer()
+                if let fen = trackedFEN, fen.contains("/") {
+                    Text(fen)
+                        .font(.system(size: 8.5, design: .monospaced))
+                        .foregroundStyle(mute.opacity(0.8))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(maxWidth: 200, alignment: .trailing)
+                }
+            }
+
+            LiveBoard(
+                fen: trackedFEN ?? startFEN,
+                highlight: highlightSquares,
+                isPlaceholder: trackedFEN == nil
+            )
+            .frame(width: boardSide, height: boardSide)
+        }
+        .padding(.top, 26)
+    }
+
+    private var boardSide: CGFloat {
+        // The board *plus* the footer line, so the square stays square.
+        UIScreen.main.bounds.width - 40
+    }
+
+    private var detailLine: some View {
+        Text(detail)
+            .font(.system(size: 9.5, design: .monospaced))
+            .foregroundStyle(mute.opacity(0.85))
+            .padding(.top, 16)
+            .textSelection(.enabled)
+    }
+
+    // MARK: - Action bar
+
+    private var actionBar: some View {
+        VStack(spacing: 0) {
+            Rectangle().fill(hairline).frame(height: 1)
+            HStack(spacing: 10) {
+                PhotosPicker(selection: $analysisItem, matching: .images) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "viewfinder")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("SCREENSHOT")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .tracking(1.4)
+                    }
+                    .foregroundStyle(canvas)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 15)
+                    .background(Capsule().fill(ink))
                 }
                 .buttonStyle(.plain)
-                Spacer()
-                Text("ISLAND, LOCK SCREEN, PREVIEWS")
-                    .font(.system(size: 9, weight: .medium, design: .monospaced))
-                    .tracking(1.2)
-                    .foregroundStyle(mute)
-            }
-            .padding(.vertical, 16)
-            .overlay(alignment: .bottom) { Rectangle().fill(hairline).frame(height: 1) }
-        }
-        .padding(.top, 84)
-    }
 
-    private func setupRow(
-        title: String,
-        detail: String,
-        trailing: AnyView,
-        live: Bool
-    ) -> some View {
-        HStack(alignment: .center) {
-            HStack(alignment: .top, spacing: 10) {
-                Circle()
-                    .fill(live ? magenta : hairline)
-                    .frame(width: 5, height: 5)
-                    .padding(.top, 6)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(ink)
-                    Text(detail)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(mute)
-                }
-            }
-            Spacer(minLength: 8)
-            trailing
-        }
-        .padding(.vertical, 16)
-        .overlay(alignment: .bottom) { Rectangle().fill(hairline).frame(height: 1) }
-    }
-
-    // MARK: - 8 · Notes
-
-    private var notes: [(String, String)] {
-        [
-            ("How is the board read?",
-             "It looks for a rectangle of alternating squares, learns the pieces from one "
-                + "calibration frame, then matches each square. Anything ambiguous is refused "
-                + "rather than guessed."),
-            ("Does it need a network?",
-             "No. Stockfish is compiled into the app and runs in-process, so the answer never "
-                + "waits on a server. The optional coaching key is the only outbound call."),
-            ("Will it read other chess apps?",
-             "The recogniser learns a theme, but the board finder currently expects "
-                + "TakeTakeTake's layout. Another app needs its own one-time calibration."),
-        ]
-    }
-
-    private var notesSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            sectionLabel("04", "NOTES")
-            VStack(spacing: 0) {
-                ForEach(Array(notes.enumerated()), id: \.offset) { index, note in
-                    VStack(alignment: .leading, spacing: 0) {
-                        Button {
-                            withAnimation(.snappy(duration: 0.28)) {
-                                openNote = openNote == index ? nil : index
-                            }
-                        } label: {
-                            HStack(alignment: .center) {
-                                Text(note.0)
-                                    .font(.system(size: 19, weight: .medium))
-                                    .foregroundStyle(ink)
-                                    .multilineTextAlignment(.leading)
-                                Spacer(minLength: 12)
-                                Image(systemName: "plus")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(mute)
-                                    .rotationEffect(.degrees(openNote == index ? 45 : 0))
-                            }
-                            .contentShape(Rectangle())
-                            .padding(.vertical, 18)
-                        }
-                        .buttonStyle(.plain)
-
-                        if openNote == index {
-                            Text(note.1)
-                                .font(.system(size: 14))
-                                .lineSpacing(3)
-                                .foregroundStyle(mute)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(.bottom, 18)
-                                .transition(.opacity.combined(with: .move(edge: .top)))
-                        }
+                Button {
+                    Task { await setTracking(!tracking) }
+                } label: {
+                    HStack(spacing: 7) {
+                        Circle()
+                            .fill(tracking ? magenta : ink.opacity(0.5))
+                            .frame(width: 6, height: 6)
+                        Text(tracking ? "LIVE" : "GO LIVE")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .tracking(1.4)
                     }
-                    .overlay(alignment: .bottom) { Rectangle().fill(hairline).frame(height: 1) }
+                    .foregroundStyle(ink)
+                    .frame(width: 128)
+                    .padding(.vertical, 15)
+                    .overlay(Capsule().strokeBorder(hairline, lineWidth: 1))
                 }
+                .buttonStyle(.plain)
             }
-            .padding(.top, 14)
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            .background(.ultraThinMaterial)
         }
-        .padding(.top, 84)
-    }
-
-    // MARK: - 9 · Footer
-
-    private var footer: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Rectangle().fill(hairline).frame(height: 1)
-                .padding(.top, 96)
-
-            HStack(alignment: .top) {
-                HStack(spacing: 8) {
-                    footerBadge("ON DEVICE")
-                    footerBadge("NO ACCOUNT")
-                }
-                Spacer()
-                HStack(spacing: 16) {
-                    Text("PRIVACY").footerLink()
-                    Text("TERMS").footerLink()
-                    Text("NOTICES").footerLink()
-                }
+        .overlay(alignment: .top) {
+            if busy {
+                Rectangle().fill(magenta).frame(height: 2)
             }
-            .padding(.top, 20)
-
-            Text("© 2026 SNSE · BUILD " + (Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1")
-                 + " · " + (calibrationDate.map { "CALIBRATED " + Self.dateText($0).uppercased() } ?? "UNCALIBRATED"))
-                .font(.system(size: 9, weight: .medium, design: .monospaced))
-                .tracking(1.2)
-                .foregroundStyle(mute.opacity(0.75))
-                .padding(.top, 14)
         }
-        .padding(.bottom, 40)
+        .animation(.easeOut(duration: 0.2), value: busy)
     }
 
-    private func footerBadge(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
-            .tracking(1.3)
-            .foregroundStyle(mute)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .overlay(Capsule().strokeBorder(hairline, lineWidth: 1))
-    }
+    // MARK: - Settings
 
-    // MARK: - Section chrome
-
-    private func sectionLabel(_ index: String, _ title: String) -> some View {
-        HStack(spacing: 10) {
-            Text(index)
-                .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                .foregroundStyle(magenta)
-            Text(title)
-                .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                .tracking(1.8)
-                .foregroundStyle(mute)
-            Rectangle().fill(hairline).frame(height: 1)
+    private var settingsButton: some View {
+        Button {
+            showSettings = true
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(ink.opacity(0.75))
+                .frame(width: 34, height: 34)
+                .background(.white.opacity(0.05), in: Circle())
         }
+        .buttonStyle(.plain)
+        .padding(.trailing, 16)
+        .padding(.top, 6)
     }
 
     // MARK: - Derived
@@ -665,15 +292,8 @@ struct ContentView: View {
             return (8 - rank) * 8 + file
         }
         let parts = Array(uci)
-        let from = String(parts[0...1]), to = String(parts[2...3])
-        return [index(Substring(from)), index(Substring(to))].compactMap { $0 }
-    }
-
-    private var turnText: String {
-        guard let fen = trackedFEN,
-              let field = fen.split(separator: " ").dropFirst().first
-        else { return "—" }
-        return field == "w" ? "WHITE" : "BLACK"
+        return [index(Substring(String(parts[0...1]))), index(Substring(String(parts[2...3])))]
+            .compactMap { $0 }
     }
 
     // MARK: - Behaviour
@@ -681,22 +301,19 @@ struct ContentView: View {
     private func applyDemoIfRequested() {
         guard UserDefaults.standard.bool(forKey: "snse-demo") else { return }
         headline = "Nxe4"
-        subline = "Your turn · black"
         lastMove = "Nxe4"
         lastMoveUCI = "f6e4"
         lastEval = "+3.37"
         lastWhy = "You take a knight with your knight. That puts it in the middle of the "
             + "board, where it controls the most squares."
         trackedFEN = "r3k2r/1p3ppp/p3pn2/8/P1pPN3/5NP1/1q3P1P/R2QR1K1 b kq - 1 4"
-        detail = "read 363 · track 8 · engine 21 · total 392 ms\nwall 498 ms"
-        lastTimings = "392 MS"
+        detail = "read 363 · track 8 · engine 21 · total 392 ms"
         tracking = true
     }
 
     private func refresh() {
         calibrationDate = store.calibrationDate
         trackedFEN = store.trackedFEN
-        keySaved = APIKeyStore.isConfigured
         tracking = LiveActivityController.isRunning
     }
 
@@ -740,11 +357,8 @@ struct ContentView: View {
                 refresh()
                 headline = "CALIBRATED"
                 subline = "This board is recognised. Screenshot a move to get one."
-                detail = [
-                    "reading verified: worst shape distance \(read.worstShapeDistance) bits, "
-                        + "colour margin \(String(format: "%.2f", read.minColorMargin))",
-                    read.fen,
-                ].joined(separator: "\n")
+                detail = "verified · worst shape distance \(read.worstShapeDistance) · "
+                    + "colour margin \(String(format: "%.2f", read.minColorMargin))"
 
             case .analyse:
                 guard store.isCalibrated else {
@@ -758,11 +372,7 @@ struct ContentView: View {
                 refresh()
                 present(outcome)
                 if !outcome.timings.isEmpty {
-                    detail = [outcome.timings, "wall \(wall) ms"].joined(separator: "\n")
-                    lastTimings = outcome.timings
-                        .split(separator: " ")
-                        .first(where: { $0.hasSuffix("ms") })
-                        .map { $0.uppercased() } ?? ""
+                    detail = [outcome.timings, "wall \(wall) ms"].joined(separator: " · ")
                 }
             }
         } catch {
@@ -780,22 +390,21 @@ struct ContentView: View {
 
         if let move = outcome.move {
             headline = move.displayMove
-            subline = outcome.trackingNote.isEmpty
-                ? "Best move in this position."
-                : outcome.trackingNote
+            subline = outcome.trackingNote.isEmpty ? "Best move in this position."
+                                                   : outcome.trackingNote
         } else {
             headline = "NO MOVE"
             subline = outcome.failure ?? "The engine had nothing to say."
         }
     }
 
-    private static func dateText(_ date: Date) -> String {
+    static func dateText(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "d MMM · HH:mm"
         return formatter.string(from: date)
     }
 
-    private static func recovery(for error: Error) -> String {
+    static func recovery(for error: Error) -> String {
         switch error {
         case BoardError.notCalibrated:
             return "Pick a starting-position screenshot first."
@@ -808,14 +417,5 @@ struct ContentView: View {
         default:
             return "\(error)"
         }
-    }
-}
-
-private extension Text {
-    func footerLink() -> some View {
-        self
-            .font(.system(size: 9, weight: .medium, design: .monospaced))
-            .tracking(1.3)
-            .foregroundStyle(Color(red: 0.467, green: 0.455, blue: 0.467))
     }
 }

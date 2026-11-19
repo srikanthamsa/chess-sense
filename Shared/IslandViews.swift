@@ -519,6 +519,42 @@ public struct IslandExpandedBottom: View {
     }
 }
 
+
+// MARK: - Expanded card (single container, so the glow can wrap the whole thing)
+
+/// The expanded Island as one card.
+///
+/// Apple's own expanded activities give each region its own slot, but the glow has to trace a
+/// single outline to read as Siri's treatment. So the card owns the layout and the widget puts
+/// it in the bottom region, which is the one full-width slot available.
+public struct IslandExpandedCard: View {
+    let state: BestMoveAttributes.ContentState
+    public init(state: BestMoveAttributes.ContentState) { self.state = state }
+
+    private var presentation: IslandPresentation { IslandPresentation(state) }
+    private var accent: Color { IslandAccent.resolve(state) }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
+                IslandExpandedLeading(state: state)
+                IslandExpandedMove(state: state)
+                Spacer(minLength: 4)
+                EvalPill(evalText: state.youEval, trusted: state.trusted)
+            }
+            IslandExpandedBottom(state: state)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .intelligenceOverlay(
+            in: RoundedRectangle(cornerRadius: 26, style: .continuous),
+            lineWidths: presentation == .move ? [2, 4, 7] : [1.5, 3, 5],
+            blurs: [0, 2, 7],
+            updateInterval: presentation == .pending ? 0.35 : 0.6
+        )
+    }
+}
+
 // MARK: - Lock screen
 
 public struct LockScreenCard: View {
@@ -584,6 +620,12 @@ public struct LockScreenCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
+        .intelligenceOverlay(
+            in: RoundedRectangle(cornerRadius: 24, style: .continuous),
+            lineWidths: [1.5, 3, 6],
+            blurs: [0, 2, 8],
+            updateInterval: 0.7
+        )
         .accessibilityElement(children: .combine)
     }
 
